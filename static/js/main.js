@@ -2,51 +2,80 @@ const bgCanvas = document.getElementById('bgCanvas');
 const bgCtx = bgCanvas.getContext('2d');
 
 function resizeBG(){
-  bgCanvas.width = window.innerWidth;
-  bgCanvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  bgCanvas.width = Math.floor(window.innerWidth * dpr);
+  bgCanvas.height = Math.floor(window.innerHeight * dpr);
+  bgCanvas.style.width = window.innerWidth + 'px';
+  bgCanvas.style.height = window.innerHeight + 'px';
+  bgCtx.setTransform(dpr,0,0,dpr,0,0);
 }
 window.addEventListener('resize', resizeBG);
 resizeBG();
 
-const particles = [];
-const PARTICLE_COUNT = Math.max(24, Math.floor((window.innerWidth*window.innerHeight)/160000));
-for(let i=0;i<PARTICLE_COUNT;i++){
-  particles.push({
-    x: Math.random()*bgCanvas.width,
-    y: Math.random()*bgCanvas.height,
-    r: Math.random()*1.6 + 0.4,
-    dx: (Math.random()-0.5)*0.22,
-    dy: (Math.random()-0.5)*0.22,
-    alpha: 0.12 + Math.random()*0.5
-  });
+// starfield parameters
+const STAR_DENSITY = 0.0009;
+let stars = [];
+function initStars(){
+  stars = [];
+  const count = Math.max(120, Math.floor(window.innerWidth * window.innerHeight * STAR_DENSITY));
+  for(let i=0;i<count;i++){
+    stars.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.6 + 0.2,
+      baseAlpha: 0.2 + Math.random()*0.8,
+      twinkleSpeed: 0.5 + Math.random()*1.8,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+initStars();
+window.addEventListener('resize', initStars);
+
+function drawNebula(){
+  // subtle nebula: layered radial gradients
+  const w = window.innerWidth, h = window.innerHeight;
+  const g = bgCtx.createRadialGradient(w*0.7, h*0.2, 50, w*0.7, h*0.2, Math.max(w,h));
+  g.addColorStop(0, 'rgba(40, 20, 60, 0.14)');
+  g.addColorStop(0.4, 'rgba(30, 10, 50, 0.06)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  bgCtx.fillStyle = g;
+  bgCtx.fillRect(0,0,w,h);
+
+  const g2 = bgCtx.createRadialGradient(w*0.2, h*0.7, 30, w*0.2, h*0.7, Math.max(w,h));
+  g2.addColorStop(0, 'rgba(10, 30, 60, 0.10)');
+  g2.addColorStop(0.6, 'rgba(5,10,30,0.03)');
+  g2.addColorStop(1, 'rgba(0,0,0,0)');
+  bgCtx.fillStyle = g2;
+  bgCtx.fillRect(0,0,w,h);
 }
 
-function drawBackground(){
-  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-  const g = bgCtx.createLinearGradient(0,0,bgCanvas.width,bgCanvas.height);
-  g.addColorStop(0, 'rgba(2,6,23,0.95)');
-  g.addColorStop(1, 'rgba(3,18,36,0.95)');
-  bgCtx.fillStyle = g;
-  bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+function drawStars(now){
+  bgCtx.clearRect(0,0,window.innerWidth, window.innerHeight);
+  // faint overall vignette
+  bgCtx.fillStyle = 'rgba(0,0,0,0.25)';
+  bgCtx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
-  bgCtx.fillStyle = '#66d9ff';
-  for(const p of particles){
-    bgCtx.globalAlpha = p.alpha;
+  drawNebula();
+
+  for(const s of stars){
+    const a = s.baseAlpha * (0.6 + 0.4 * Math.sin(s.phase + now * 0.001 * s.twinkleSpeed));
+    bgCtx.globalAlpha = a;
     bgCtx.beginPath();
-    bgCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    bgCtx.fillStyle = '#ffffff';
+    bgCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
     bgCtx.fill();
-    p.x += p.dx; p.y += p.dy;
-    if(p.x < -20) p.x = bgCanvas.width + 20;
-    if(p.x > bgCanvas.width + 20) p.x = -20;
-    if(p.y < -20) p.y = bgCanvas.height + 20;
-    if(p.y > bgCanvas.height + 20) p.y = -20;
   }
   bgCtx.globalAlpha = 1;
 }
-function bgLoop(){ drawBackground(); requestAnimationFrame(bgLoop); }
+
+function bgLoop(now){
+  drawStars(now || performance.now());
+  requestAnimationFrame(bgLoop);
+}
 requestAnimationFrame(bgLoop);
 
-/* Lazy load tools */
+/* ---------- 懒加载工具框架（不变） ---------- */
 const toolArea = document.getElementById('toolArea');
 const buttons = document.querySelectorAll('#toolButtons button');
 const loaded = new Map();
@@ -75,20 +104,9 @@ async function loadTool(name){
   }
 }
 
-buttons.forEach(b=>{
-  b.addEventListener('click', ()=> loadTool(b.dataset.tool));
-});
+buttons.forEach(b=>{ b.addEventListener('click', ()=> loadTool(b.dataset.tool)); });
 
-/* Theme toggle */
-const themeToggle = document.getElementById('themeToggle');
-themeToggle.addEventListener('click', ()=>{
-  document.body.classList.toggle('light');
-  localStorage.setItem('cool_dashboard_theme', document.body.classList.contains('light') ? 'light' : 'dark');
-});
-const savedTheme = localStorage.getItem('cool_dashboard_theme');
-if(savedTheme === 'light') document.body.classList.add('light');
-
-/* Quick actions: copy time */
+/* ---------- 快捷：复制时间 & 便签（localStorage） ---------- */
 document.getElementById('copyTime').addEventListener('click', async ()=>{
   const now = new Date().toLocaleString();
   try{
@@ -99,7 +117,6 @@ document.getElementById('copyTime').addEventListener('click', async ()=>{
   }
 });
 
-/* Notes in right panel (quick) - localStorage */
 const NOTE_KEY = 'cool_dashboard_note_quick';
 const noteArea = document.getElementById('noteArea');
 noteArea.value = localStorage.getItem(NOTE_KEY) || '';
