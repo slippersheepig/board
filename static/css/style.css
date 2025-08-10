@@ -1,44 +1,78 @@
-body {
-    margin: 0;
-    font-family: 'Orbitron', sans-serif;
-    color: #ddd;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: black;
-    overflow: hidden;
+/* Base / layout */
+:root{
+  --bg1: #03040a;
+  --bg2: #07121a;
+  --card: rgba(255,255,255,0.03);
+  --accent: #66d9ff;
+  --muted: rgba(255,255,255,0.65);
+  --neon: rgba(102,217,255,0.14);
+  --glass: rgba(255,255,255,0.03);
+  --btn-glow: 0 6px 24px rgba(102,217,255,0.12);
+  --btn-glow-strong: 0 12px 48px rgba(102,217,255,0.18);
 }
 
-.container {
-    max-width: 900px;
-    width: 90%;
-    text-align: center;
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent), linear-gradient(120deg,var(--bg1),var(--bg2)); color:#e8f6ff; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+
+/* background canvas sits below everything */
+#bgCanvas{position:fixed; inset:0; z-index:0}
+
+/* header */
+#topbar{position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; padding:18px 28px}
+.title{font-size:20px; font-weight:700; letter-spacing:0.6px}
+.subtitle{color:var(--muted); font-size:13px}
+
+/* main container centered with max width */
+#container{position:relative; z-index:2; max-width:1200px; margin:18px auto; display:flex; gap:20px; padding:0 20px; align-items:flex-start; justify-content:center}
+
+/* left + right columns */
+#leftCol{flex:1; display:flex; flex-direction:column; gap:16px; min-width:300px}
+#rightCol{width:360px; display:flex; flex-direction:column; gap:16px}
+
+/* cards */
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:14px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.02)}
+
+/* clock */
+.clockSVG{width:460px; height:460px; display:block; margin:0 auto; background:transparent}
+#dateText{margin-top:10px; text-align:center; font-weight:600; letter-spacing:0.8px}
+
+/* neon date style */
+.dateText.neon{
+  color:#aef7ff;
+  font-size:16px;
+  text-shadow:
+    0 0 6px rgba(160,240,255,0.18),
+    0 0 14px rgba(80,200,255,0.10);
 }
 
-button {
-    background: transparent;
-    border: 2px solid #0ff;
-    color: #0ff;
-    padding: 10px 20px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-}
-button:hover {
-    background: #0ff;
-    color: black;
-    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
-}
+/* tool buttons */
+.toolButtons{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px}
+.toolButtons button{background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); color:#eaf9ff; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; box-shadow: var(--btn-glow); transition:transform .12s, box-shadow .12s, background .12s; font-weight:600; font-size:13px}
+.toolButtons button:hover{transform:translateY(-4px); box-shadow:var(--btn-glow-strong); background:linear-gradient(135deg, rgba(102,217,255,0.06), rgba(255,255,255,0.02))}
 
-ul li {
-    color: #fff;
-}
+/* small neon buttons */
+.neon-small{background:transparent; border:1px solid rgba(255,255,255,0.06); color:#eaf9ff; padding:6px 10px; border-radius:8px; cursor:pointer; transition:all .12s}
+.neon-small:hover{transform:translateY(-3px); box-shadow: var(--btn-glow-strong)}
 
-@media (max-width: 768px) {
-    .container {
-        font-size: 14px;
-    }
+/* tool area and hints */
+.toolArea{margin-top:12px; min-height:140px; color:var(--muted)}
+.hint{color:var(--muted)}
+
+/* notes */
+textarea{width:100%; min-height:120px; background:rgba(0,0,0,0.25); border-radius:10px; padding:10px; color:#eaf9ff; border:1px solid rgba(255,255,255,0.03)}
+
+/* right panel tweaks */
+.quickCard .muted{color:var(--muted); font-size:13px}
+.noteActions{display:flex; gap:8px; margin-top:8px}
+
+/* responsive */
+@media (max-width:1100px){
+  #container{flex-direction:column; align-items:center}
+  #rightCol{width:100%}
+  .clockSVG{width:360px; height:360px}
+}
+@media (max-width:640px){
+  .clockSVG{width:300px; height:300px}
+  #rightCol{width:100%}
+  #container{padding:0 12px}
 }
