@@ -12,7 +12,7 @@ function resizeBG(){
 window.addEventListener('resize', resizeBG);
 resizeBG();
 
-const STAR_DENSITY = 0.0006;
+const STAR_DENSITY = 0.0003;
 let stars = [];
 function initStars(){
   stars = [];
@@ -34,7 +34,7 @@ window.addEventListener('resize', initStars);
 let nebulaOffset = {x:0, y:0};
 function drawNebula(now){
   const w = window.innerWidth, h = window.innerHeight;
-  const t = (now || performance.now()) * 0.00007;
+  const t = (now || performance.now()) * 0.00099;
   nebulaOffset.x = Math.sin(t) * (w * 0.05);
   nebulaOffset.y = Math.cos(t * 0.9) * (h * 0.03);
 
