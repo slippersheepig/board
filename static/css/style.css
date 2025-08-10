@@ -14,26 +14,25 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent), linear-gradient(120deg,var(--bg1),var(--bg2)); color:#e8f6ff; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
 
-/* background canvas sits below everything */
+/* background canvas */
 #bgCanvas{position:fixed; inset:0; z-index:0}
 
-/* header */
-#topbar{position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; padding:18px 28px}
-.title{font-size:20px; font-weight:700; letter-spacing:0.6px}
-.subtitle{color:var(--muted); font-size:13px}
+/* header merged and centered */
+#topbar{position:relative; z-index:2; padding:18px 28px; display:flex; justify-content:center; align-items:center; text-align:center}
+#topTitle{display:flex; flex-direction:column; align-items:center}
+.title{font-size:22px; font-weight:700; letter-spacing:0.6px}
+.subtitle{color:var(--muted); font-size:13px; margin-top:4px}
 
-/* main centered */
+/* main centered area */
 #container{position:relative; z-index:2; max-width:1100px; margin:18px auto; display:flex; gap:20px; padding:0 20px; align-items:flex-start; justify-content:center}
 #centerColumn{width:100%; display:flex; flex-direction:column; gap:18px; align-items:center}
 
-/* card */
+/* cards */
 .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:14px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.02); width:100%; max-width:980px}
 
 /* clock */
 .clockSVG{width:520px; height:520px; display:block; margin:6px auto; background:transparent}
 #dateText{margin-top:10px; text-align:center; font-weight:700; letter-spacing:0.8px}
-
-/* neon date style with gradient fill */
 .dateText.neon{
   font-size:18px;
   background: linear-gradient(90deg, #aef7ff, #c6ffe7);
@@ -44,27 +43,43 @@ html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -app
     0 6px 18px rgba(0,0,0,0.45);
 }
 
-/* roman numerals style inside SVG (fallback) */
-.clockSVG text { font-family: Georgia, 'Times New Roman', serif; fill: var(--roman-color); font-weight:700; font-size:18px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
+/* tools title centered */
+.toolsTitle{ text-align:center; margin:0 0 8px 0; color:var(--accent); font-size:18px }
 
 /* tool buttons */
 .toolButtons{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; justify-content:center}
 .toolButtons button{background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); color:#eaf9ff; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; box-shadow: var(--btn-glow); transition:transform .12s, box-shadow .12s, background .12s; font-weight:700; font-size:14px}
 .toolButtons button:hover{transform:translateY(-4px); box-shadow:var(--btn-glow-strong); background:linear-gradient(135deg, rgba(102,217,255,0.06), rgba(255,255,255,0.02))}
 
-/* smaller neon buttons (if used) */
-.neon-small{background:transparent; border:1px solid rgba(255,255,255,0.06); color:#eaf9ff; padding:6px 10px; border-radius:8px; cursor:pointer; transition:all .12s}
-.neon-small:hover{transform:translateY(-3px); box-shadow: var(--btn-glow-strong)}
+/* tool area: center loaded content */
+.toolArea{margin-top:12px; min-height:160px; color:var(--muted); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
 
-/* tool area and hints */
-.toolArea{margin-top:12px; min-height:140px; color:var(--muted)}
-.hint{color:var(--muted)}
+/* apply nicer style to any buttons inside toolArea (modules don't need change) */
+.toolArea button, .toolArea input[type="button"], .toolArea .btn {
+  background: linear-gradient(90deg, rgba(102,217,255,0.12), rgba(170,230,255,0.06));
+  border: 1px solid rgba(160,230,255,0.08);
+  color: #04232b;
+  padding: 8px 12px;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(10,40,60,0.25);
+  cursor: pointer;
+  font-weight:700;
+  transition: transform .12s, box-shadow .12s, filter .12s;
+}
+.toolArea button:hover, .toolArea .btn:hover {
+  transform: translateY(-4px);
+  filter: drop-shadow(0 6px 24px rgba(102,217,255,0.12));
+  box-shadow: 0 12px 36px rgba(10,40,60,0.35);
+}
 
-/* notes removed (we removed right panel) */
+/* center simple tool content wrappers if modules return block elements */
+.toolArea > div { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; }
 
-/* responsive */
+/* inputs inside tool area slightly styled and centered */
+.toolArea input, .toolArea select, .toolArea textarea { padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.2); color:#eef; }
+
+/* responsive adjustments */
 @media (max-width:1100px){
-  #container{padding:0 12px}
   .clockSVG{width:420px; height:420px}
   .card{max-width:720px}
 }
@@ -72,4 +87,5 @@ html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -app
   .clockSVG{width:320px; height:320px}
   .card{max-width:100%}
   .toolButtons button{flex:1 1 45%}
+  .toolArea{min-height:140px}
 }
