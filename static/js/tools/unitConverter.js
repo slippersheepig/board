@@ -2,24 +2,20 @@ export async function init(){
   const c = document.createElement('div');
   c.innerHTML = `
     <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;width:100%;padding:6px 0">
-      <div id="lenBlock" style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div id="lenBlock" class="converter-block" style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:8px">
         <h4 style="margin:0">长度</h4>
         <input id="lenVal" placeholder="数值" style="width:85%;"/>
         <div style="display:flex;gap:8px;width:85%;justify-content:center;">
           <select id="lenFrom" style="flex:1"><option value="m">米 (m)</option><option value="cm">厘米 (cm)</option><option value="ft">英尺 (ft)</option></select>
           <select id="lenTo" style="flex:1"><option value="cm">厘米 (cm)</option><option value="m">米 (m)</option><option value="ft">英尺 (ft)</option></select>
         </div>
+        <div style="width:85%; display:flex; justify-content:center; margin-top:6px;">
+          <button id="lenConvertBtn" class="neon-btn" type="button">转换</button>
+        </div>
         <div id="lenOut" style="width:85%;text-align:center;color:var(--muted);margin-top:6px;">结果：--</div>
       </div>
-
-      <div id="tpBlock" style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div id="tpBlock" class="converter-block" style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:8px">
         <h4 style="margin:0">温度</h4>
-
-        <div style="display:flex; gap:8px; width:85%; align-items:center; justify-content:flex-start;">
-          <button id="lenConvertBtn" class="neon-btn" type="button">转换</button>
-          <div style="flex:1"></div>
-        </div>
-
         <input id="tpVal" placeholder="数值" style="width:85%;"/>
         <div style="display:flex;gap:8px;width:85%;justify-content:center;align-items:center;">
           <select id="tpFrom" style="flex:1"><option value="C">℃</option><option value="F">℉</option></select>
@@ -37,7 +33,6 @@ export async function init(){
     return ('' + rounded).replace(/\.?0+$/, '');
   }
 
-  // 元素引用
   const lenVal = c.querySelector('#lenVal');
   const lenFrom = c.querySelector('#lenFrom');
   const lenTo = c.querySelector('#lenTo');
@@ -84,8 +79,10 @@ export async function init(){
     }
   }
 
-  tpConvertBtn.onclick = convertTemp;
-  tpVal.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') convertTemp(); });
+  lenVal.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') lenConvertBtn.click(); });
+  tpVal.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tpConvertBtn.click(); });
+
+  tpConvertBtn.addEventListener('click', convertTemp);
 
   return c;
 }
