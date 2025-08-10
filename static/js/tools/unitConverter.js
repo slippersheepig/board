@@ -4,25 +4,23 @@ export async function init(){
     <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;width:100%;padding:6px 0">
       <div id="lenBlock" class="converter-block" style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:8px">
         <h4 style="margin:0">长度</h4>
-        <input id="lenVal" placeholder="数值" style="width:85%;"/>
-        <div style="display:flex;gap:8px;width:85%;justify-content:center;">
-          <select id="lenFrom" style="flex:1"><option value="m">米 (m)</option><option value="cm">厘米 (cm)</option><option value="ft">英尺 (ft)</option></select>
-          <select id="lenTo" style="flex:1"><option value="cm">厘米 (cm)</option><option value="m">米 (m)</option><option value="ft">英尺 (ft)</option></select>
-        </div>
-        <div style="width:85%; display:flex; justify-content:center; margin-top:6px;">
+        <input id="lenVal" placeholder="数值" style="width:90%;"/>
+        <div class="converter-row" style="width:90%; display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap;">
+          <select id="lenFrom" style="flex:1; min-width:100px;"><option value="m">米 (m)</option><option value="cm">厘米 (cm)</option><option value="ft">英尺 (ft)</option></select>
+          <select id="lenTo"   style="flex:1; min-width:100px;"><option value="cm">厘米 (cm)</option><option value="m">米 (m)</option><option value="ft">英尺 (ft)</option></select>
           <button id="lenConvertBtn" class="neon-btn" type="button">转换</button>
         </div>
-        <div id="lenOut" style="width:85%;text-align:center;color:var(--muted);margin-top:6px;">结果：--</div>
+        <div id="lenOut" style="width:90%;text-align:center;color:var(--muted);margin-top:6px;">结果：--</div>
       </div>
       <div id="tpBlock" class="converter-block" style="flex:1;min-width:240px;display:flex;flex-direction:column;align-items:center;gap:8px">
         <h4 style="margin:0">温度</h4>
-        <input id="tpVal" placeholder="数值" style="width:85%;"/>
-        <div style="display:flex;gap:8px;width:85%;justify-content:center;align-items:center;">
-          <select id="tpFrom" style="flex:1"><option value="C">℃</option><option value="F">℉</option></select>
-          <select id="tpTo" style="flex:1"><option value="F">℉</option><option value="C">℃</option></select>
-          <button id="tpConvertBtn" class="neon-btn" type="button" style="margin-left:6px;">转换</button>
+        <input id="tpVal" placeholder="数值" style="width:90%;"/>
+        <div class="converter-row" style="width:90%; display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap;">
+          <select id="tpFrom" style="flex:1; min-width:100px;"><option value="C">℃</option><option value="F">℉</option></select>
+          <select id="tpTo"   style="flex:1; min-width:100px;"><option value="F">℉</option><option value="C">℃</option></select>
+          <button id="tpConvertBtn" class="neon-btn" type="button">转换</button>
         </div>
-        <div id="tpOut" style="width:85%;text-align:center;color:var(--muted);margin-top:6px;">结果：--</div>
+        <div id="tpOut" style="width:90%;text-align:center;color:var(--muted);margin-top:6px;">结果：--</div>
       </div>
     </div>
   `;
