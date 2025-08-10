@@ -13,7 +13,7 @@ window.addEventListener('resize', resizeBG);
 resizeBG();
 
 const STAR_DENSITY = 0.0003;
-const STAR_MOVE_AMPLITUDE = 600;
+const STAR_MOVE_AMPLITUDE = 100;
 const STAR_MOVE_SPEED = 0.00035;
 const NEBULA_TIME_SCALE = 0.00006;
 
