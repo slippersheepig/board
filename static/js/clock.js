@@ -1,88 +1,77 @@
-function drawClock() {
-    const canvas = document.getElementById("clock");
-    const ctx = canvas.getContext("2d");
-    const radius = canvas.height / 2;
-    ctx.translate(radius, radius);
-    const actualRadius = radius * 0.9;
-    setInterval(() => {
-        drawFace(ctx, actualRadius);
-        drawNumbers(ctx, actualRadius);
-        drawTime(ctx, actualRadius);
-    }, 1000);
+const svgNS = "http://www.w3.org/2000/svg";
+const clockGroup = document.getElementById('clockGroup');
+const marksGroup = document.getElementById('marks');
+const hourHand = document.getElementById('hourHand');
+const minuteHand = document.getElementById('minuteHand');
+const secondHand = document.getElementById('secondHand');
+const pendulumGroup = document.getElementById('pendulumGroup');
+const dateText = document.getElementById('dateText');
+
+// 罗马数字数组（从 12 开始顺时针）
+const ROMAN = ["XII","I","II","III","IV","V","VI","VII","VIII","IX","X","XI"];
+
+function ensureMarks(){
+  if(marksGroup.childElementCount > 0) return;
+  const radius = 140;
+  // minute ticks (subtle)
+  for(let i=0;i<60;i++){
+    const line = document.createElementNS(svgNS, 'line');
+    const ang = i * Math.PI/30;
+    const inner = (i%5===0) ? radius*0.78 : radius*0.86;
+    const outer = radius*0.95;
+    line.setAttribute('x1', Math.cos(ang) * inner);
+    line.setAttribute('y1', Math.sin(ang) * inner);
+    line.setAttribute('x2', Math.cos(ang) * outer);
+    line.setAttribute('y2', Math.sin(ang) * outer);
+    line.setAttribute('stroke', (i%5===0) ? '#cfeeff' : 'rgba(255,255,255,0.12)');
+    line.setAttribute('stroke-width', (i%5===0) ? '2' : '1');
+    marksGroup.appendChild(line);
+  }
+  // roman numerals
+  for(let i=0;i<12;i++){
+    const ang = (i/12) * Math.PI * 2 - Math.PI/2;
+    const tx = Math.cos(ang) * radius * 0.62;
+    const ty = Math.sin(ang) * radius * 0.62 + 6; // adjust baseline
+    const t = document.createElementNS(svgNS, 'text');
+    t.setAttribute('x', tx);
+    t.setAttribute('y', ty);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-family', 'Inter, Arial, sans-serif');
+    t.setAttribute('font-size', '18');
+    t.setAttribute('fill', '#cfeeff');
+    t.setAttribute('style', 'filter: drop-shadow(0 2px 6px rgba(80,200,255,0.08)); font-weight:700;');
+    t.textContent = ROMAN[i];
+    marksGroup.appendChild(t);
+  }
+}
+ensureMarks();
+
+function updateSVGClock(){
+  const now = new Date();
+  const ms = now.getMilliseconds();
+  const s = now.getSeconds() + ms/1000;
+  const m = now.getMinutes() + s/60;
+  const h = (now.getHours() % 12) + m/60;
+
+  const hourDeg = (h / 12) * 360;
+  const minuteDeg = (m / 60) * 360;
+  const secondDeg = (s / 60) * 360;
+
+  hourHand.setAttribute('transform', `rotate(${hourDeg},0,0)`);
+  minuteHand.setAttribute('transform', `rotate(${minuteDeg},0,0)`);
+  secondHand.setAttribute('transform', `rotate(${secondDeg},0,0)`);
+
+  // pendulum: smooth oscillation
+  const phase = performance.now() / 700; // slower smoother
+  const angle = Math.sin(phase) * 10; // ±10deg
+  pendulumGroup.setAttribute('transform', `translate(0,40) rotate(${angle})`);
+
+  // stylized date (neon + small glow)
+  dateText.textContent = now.toLocaleDateString();
 }
 
-function drawFace(ctx, radius) {
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = "#111";
-    ctx.fill();
-
-    let grad = ctx.createRadialGradient(0, 0, radius * 0.95, 0, 0, radius * 1.05);
-    grad.addColorStop(0, "#fff");
-    grad.addColorStop(0.5, "#333");
-    grad.addColorStop(1, "#fff");
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = radius * 0.05;
-    ctx.stroke();
+function loop(){
+  updateSVGClock();
+  requestAnimationFrame(loop);
 }
-
-function drawNumbers(ctx, radius) {
-    ctx.font = radius * 0.15 + "px serif";
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "center";
-    const roman = ["XII","I","II","III","IV","V","VI","VII","VIII","IX","X","XI"];
-    for (let num = 1; num <= 12; num++) {
-        let ang = num * Math.PI / 6;
-        ctx.rotate(ang);
-        ctx.translate(0, -radius * 0.85);
-        ctx.rotate(-ang);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(roman[num-1], 0, 0);
-        ctx.rotate(ang);
-        ctx.translate(0, radius * 0.85);
-        ctx.rotate(-ang);
-    }
-}
-
-function drawTime(ctx, radius) {
-    const now = new Date();
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    const second = now.getSeconds();
-
-    // 时针
-    let hourPos = ((hour % 12) * Math.PI / 6) + (minute * Math.PI / (6 * 60));
-    drawHand(ctx, hourPos, radius * 0.5, radius * 0.07);
-
-    // 分针
-    let minutePos = (minute * Math.PI / 30) + (second * Math.PI / (30 * 60));
-    drawHand(ctx, minutePos, radius * 0.8, radius * 0.07);
-
-    // 秒针
-    let secondPos = second * Math.PI / 30;
-    drawHand(ctx, secondPos, radius * 0.9, radius * 0.02, "red");
-
-    // 日期
-    ctx.font = radius * 0.15 + "px monospace";
-    ctx.fillStyle = "#0ff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.shadowColor = "#0ff";
-    ctx.shadowBlur = 20;
-    ctx.fillText(now.toDateString(), 0, radius * 0.6);
-    ctx.shadowBlur = 0;
-}
-
-function drawHand(ctx, pos, length, width, color="#fff") {
-    ctx.beginPath();
-    ctx.lineWidth = width;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = color;
-    ctx.moveTo(0,0);
-    ctx.rotate(pos);
-    ctx.lineTo(0, -length);
-    ctx.stroke();
-    ctx.rotate(-pos);
-}
-
-drawClock();
+requestAnimationFrame(loop);
