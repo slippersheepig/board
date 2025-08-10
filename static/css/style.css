@@ -54,11 +54,10 @@ html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -app
 /* tool area: center loaded content */
 .toolArea{margin-top:12px; min-height:160px; color:var(--muted); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
 
-/* apply nicer style to any buttons inside toolArea (modules don't need change) */
 .toolArea button, .toolArea input[type="button"], .toolArea .btn {
   background: linear-gradient(90deg, rgba(102,217,255,0.12), rgba(170,230,255,0.06));
   border: 1px solid rgba(160,230,255,0.08);
-  color: #04232b;
+  color: #eaf9ff;
   padding: 8px 12px;
   border-radius: 10px;
   box-shadow: 0 6px 20px rgba(10,40,60,0.25);
@@ -72,11 +71,24 @@ html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -app
   box-shadow: 0 12px 36px rgba(10,40,60,0.35);
 }
 
-/* center simple tool content wrappers if modules return block elements */
-.toolArea > div { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; }
+.toolArea input, .toolArea select, .toolArea textarea {
+  padding:8px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.04);
+  background:rgba(0,0,0,0.28);
+  color:#eef;
+}
 
-/* inputs inside tool area slightly styled and centered */
-.toolArea input, .toolArea select, .toolArea textarea { padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.2); color:#eef; }
+.toolArea .neon-btn, .toolArea .neon-small {
+  color: #eaf9ff;
+}
+
+.toolArea .row {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+}
 
 /* responsive adjustments */
 @media (max-width:1100px){
