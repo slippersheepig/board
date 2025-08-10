@@ -12,7 +12,7 @@ function resizeBG(){
 window.addEventListener('resize', resizeBG);
 resizeBG();
 
-const STAR_DENSITY = 0.0011;
+const STAR_DENSITY = 0.0009;
 let stars = [];
 function initStars(){
   stars = [];
