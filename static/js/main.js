@@ -12,19 +12,18 @@ function resizeBG(){
 window.addEventListener('resize', resizeBG);
 resizeBG();
 
-// starfield parameters
-const STAR_DENSITY = 0.0009;
+const STAR_DENSITY = 0.0022;
 let stars = [];
 function initStars(){
   stars = [];
-  const count = Math.max(120, Math.floor(window.innerWidth * window.innerHeight * STAR_DENSITY));
+  const count = Math.max(200, Math.floor(window.innerWidth * window.innerHeight * STAR_DENSITY));
   for(let i=0;i<count;i++){
     stars.push({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.6 + 0.2,
-      baseAlpha: 0.2 + Math.random()*0.8,
-      twinkleSpeed: 0.5 + Math.random()*1.8,
+      r: Math.random() * 1.8 + 0.2,
+      baseAlpha: 0.25 + Math.random()*0.75,
+      twinkleSpeed: 0.3 + Math.random()*1.6,
       phase: Math.random() * Math.PI * 2
     });
   }
@@ -33,17 +32,16 @@ initStars();
 window.addEventListener('resize', initStars);
 
 function drawNebula(){
-  // subtle nebula: layered radial gradients
   const w = window.innerWidth, h = window.innerHeight;
-  const g = bgCtx.createRadialGradient(w*0.7, h*0.2, 50, w*0.7, h*0.2, Math.max(w,h));
-  g.addColorStop(0, 'rgba(40, 20, 60, 0.14)');
-  g.addColorStop(0.4, 'rgba(30, 10, 50, 0.06)');
+  const g = bgCtx.createRadialGradient(w*0.75, h*0.2, 50, w*0.75, h*0.2, Math.max(w,h));
+  g.addColorStop(0, 'rgba(50,8,80,0.12)');
+  g.addColorStop(0.4, 'rgba(20,10,60,0.06)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   bgCtx.fillStyle = g;
   bgCtx.fillRect(0,0,w,h);
 
   const g2 = bgCtx.createRadialGradient(w*0.2, h*0.7, 30, w*0.2, h*0.7, Math.max(w,h));
-  g2.addColorStop(0, 'rgba(10, 30, 60, 0.10)');
+  g2.addColorStop(0, 'rgba(10,30,60,0.12)');
   g2.addColorStop(0.6, 'rgba(5,10,30,0.03)');
   g2.addColorStop(1, 'rgba(0,0,0,0)');
   bgCtx.fillStyle = g2;
@@ -52,15 +50,16 @@ function drawNebula(){
 
 function drawStars(now){
   bgCtx.clearRect(0,0,window.innerWidth, window.innerHeight);
-  // faint overall vignette
-  bgCtx.fillStyle = 'rgba(0,0,0,0.25)';
+  // faint vignette
+  bgCtx.fillStyle = 'rgba(0,0,0,0.22)';
   bgCtx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
   drawNebula();
 
   for(const s of stars){
+    s.phase += (0.001 * s.twinkleSpeed);
     const a = s.baseAlpha * (0.6 + 0.4 * Math.sin(s.phase + now * 0.001 * s.twinkleSpeed));
-    bgCtx.globalAlpha = a;
+    bgCtx.globalAlpha = Math.max(0.06, Math.min(1, a));
     bgCtx.beginPath();
     bgCtx.fillStyle = '#ffffff';
     bgCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
@@ -75,7 +74,7 @@ function bgLoop(now){
 }
 requestAnimationFrame(bgLoop);
 
-/* ---------- 懒加载工具框架（不变） ---------- */
+/* ================== Lazy load 小工具框架 ================== */
 const toolArea = document.getElementById('toolArea');
 const buttons = document.querySelectorAll('#toolButtons button');
 const loaded = new Map();
@@ -105,25 +104,3 @@ async function loadTool(name){
 }
 
 buttons.forEach(b=>{ b.addEventListener('click', ()=> loadTool(b.dataset.tool)); });
-
-/* ---------- 快捷：复制时间 & 便签（localStorage） ---------- */
-document.getElementById('copyTime').addEventListener('click', async ()=>{
-  const now = new Date().toLocaleString();
-  try{
-    await navigator.clipboard.writeText(now);
-    document.getElementById('copyResult').textContent = '已复制: ' + now;
-  }catch(e){
-    document.getElementById('copyResult').textContent = '复制失败';
-  }
-});
-
-const NOTE_KEY = 'cool_dashboard_note_quick';
-const noteArea = document.getElementById('noteArea');
-noteArea.value = localStorage.getItem(NOTE_KEY) || '';
-document.getElementById('noteSave').addEventListener('click', ()=>{
-  localStorage.setItem(NOTE_KEY, noteArea.value || '');
-  alert('已保存到本地浏览器（仅此浏览器可见）');
-});
-document.getElementById('noteClear').addEventListener('click', ()=>{
-  if(confirm('清空便签？')){ noteArea.value=''; localStorage.removeItem(NOTE_KEY); }
-});
