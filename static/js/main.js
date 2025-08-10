@@ -13,35 +13,39 @@ window.addEventListener('resize', resizeBG);
 resizeBG();
 
 const STAR_DENSITY = 0.0003;
+const STAR_MOVE_AMPLITUDE = 1.2;
+const STAR_MOVE_SPEED = 0.00035;
+const NEBULA_TIME_SCALE = 0.00006;
+
 let stars = [];
 function initStars(){
   stars = [];
   const count = Math.max(60, Math.floor(window.innerWidth * window.innerHeight * STAR_DENSITY));
   for(let i=0;i<count;i++){
+    const baseAmp = (Math.random() * 0.8 + 0.4) * STAR_MOVE_AMPLITUDE;
     stars.push({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
+      baseX: Math.random() * window.innerWidth,
+      baseY: Math.random() * window.innerHeight,
       r: Math.random() * 1.4 + 0.12,
-      baseAlpha: 0.16 + Math.random()*0.6,
-      twinkleSpeed: 0.2 + Math.random()*0.9,
-      phase: Math.random() * Math.PI * 2
+      baseAlpha: 0.14 + Math.random()*0.6,
+      twinkleSpeed: 0.18 + Math.random()*0.9,
+      phase: Math.random() * Math.PI * 2,
+      moveAmp: baseAmp,
+      moveFreq: 0.6 + Math.random()*1.8,
+      movePhase: Math.random() * Math.PI * 2
     });
   }
 }
 initStars();
 window.addEventListener('resize', initStars);
 
-let nebulaOffset = {x:0, y:0};
-
 function drawNebula(nowMs){
   const w = window.innerWidth, h = window.innerHeight;
   const now = nowMs || performance.now();
-
-  const t = now * 0.00006;
+  const t = now * NEBULA_TIME_SCALE;
 
   const ox1 = Math.sin(t * 0.9) * (w * 0.06);
   const oy1 = Math.cos(t * 0.85) * (h * 0.035);
-
   const g1 = bgCtx.createRadialGradient(w*0.75 + ox1, h*0.18 + oy1, 60, w*0.75 + ox1, h*0.18 + oy1, Math.max(w,h));
   g1.addColorStop(0, 'rgba(44,12,80,0.12)');
   g1.addColorStop(0.35, 'rgba(25,10,52,0.06)');
@@ -49,37 +53,46 @@ function drawNebula(nowMs){
   bgCtx.fillStyle = g1;
   bgCtx.fillRect(0,0,w,h);
 
-  const ox2 = Math.sin(t * 1.45 + 2.1) * (w * 0.04);
-  const oy2 = Math.cos(t * 1.2 + 1.3) * (h * 0.02);
-
+  const ox2 = Math.sin(t * 1.45 + 1.9) * (w * 0.04);
+  const oy2 = Math.cos(t * 1.2 + 1.2) * (h * 0.02);
   const g2 = bgCtx.createRadialGradient(w*0.18 + ox2, h*0.72 + oy2, 40, w*0.18 + ox2, h*0.72 + oy2, Math.max(w,h));
   g2.addColorStop(0, 'rgba(10,30,60,0.10)');
   g2.addColorStop(0.6, 'rgba(5,10,30,0.03)');
   g2.addColorStop(1, 'rgba(0,0,0,0)');
   bgCtx.fillStyle = g2;
   bgCtx.fillRect(0,0,w,h);
-
-  nebulaOffset.x = (ox1 + ox2) * 0.5;
-  nebulaOffset.y = (oy1 + oy2) * 0.5;
 }
 
-function drawStars(now){
-  bgCtx.clearRect(0,0,window.innerWidth, window.innerHeight);
+function drawStars(nowMs){
+  const w = window.innerWidth, h = window.innerHeight;
+  bgCtx.clearRect(0,0,w,h);
 
   bgCtx.fillStyle = 'rgba(0,0,0,0.20)';
-  bgCtx.fillRect(0,0,window.innerWidth,window.innerHeight);
+  bgCtx.fillRect(0,0,w,h);
 
-  drawNebula(now);
+  drawNebula(nowMs);
+
+  const now = nowMs || performance.now();
 
   for(const s of stars){
-    s.phase += 0.0008 * s.twinkleSpeed;
-    const a = s.baseAlpha * (0.6 + 0.4 * Math.sin(s.phase + now * 0.0005 * s.twinkleSpeed));
-    bgCtx.globalAlpha = Math.max(0.06, Math.min(1, a));
+    s.phase += 0.0007 * s.twinkleSpeed;
+
+    const drift = Math.sin(now * STAR_MOVE_SPEED * s.moveFreq + s.movePhase);
+    const drift2 = Math.cos(now * STAR_MOVE_SPEED * s.moveFreq * 0.7 + s.movePhase * 1.3);
+    const dx = drift * s.moveAmp;
+    const dy = drift2 * s.moveAmp * 0.6;
+
+    const x = s.baseX + dx;
+    const y = s.baseY + dy;
+
+    const alpha = s.baseAlpha * (0.6 + 0.4 * Math.sin(s.phase + now * 0.00045 * s.twinkleSpeed));
+    bgCtx.globalAlpha = Math.max(0.05, Math.min(1, alpha));
     bgCtx.beginPath();
     bgCtx.fillStyle = '#ffffff';
-    bgCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    bgCtx.arc(x, y, s.r, 0, Math.PI*2);
     bgCtx.fill();
   }
+
   bgCtx.globalAlpha = 1;
 }
 
