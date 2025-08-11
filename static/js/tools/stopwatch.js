@@ -3,7 +3,7 @@ export async function init(){
   el.innerHTML = `
     <div>
       <div id="swDisplay" style="font-size:20px">00:00.000</div>
-      <div style="margin-top:8px"><button id="swStart">开始/圈</button> <button id="swStop">停止</button> <button id="swReset">重置</button></div>
+      <div style="margin-top:8px"><button id="swStart">开始</button> <button id="swStop">停止</button> <button id="swReset">重置</button></div>
       <div id="swLaps" style="margin-top:8px;max-height:120px;overflow:auto"></div>
     </div>
   `;
