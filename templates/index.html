@@ -4,7 +4,32 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>忙人免进</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌓</text></svg>">
+
+  <!-- 金色半月透明背景 + 双层光晕 favicon -->
+  <link rel="icon" 
+        href="data:image/svg+xml;utf8,
+        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+          <defs>
+            <radialGradient id='goldGrad' cx='50%' cy='50%' r='50%'>
+              <stop offset='0%' stop-color='%23fff8dc'/>
+              <stop offset='50%' stop-color='%23ffd700'/>
+              <stop offset='100%' stop-color='%23b8860b'/>
+            </radialGradient>
+            <filter id='doubleGlow' x='-50%' y='-50%' width='200%' height='200%'>
+              <feGaussianBlur in='SourceGraphic' stdDeviation='6' result='outerBlur'/>
+              <feMerge>
+                <feMergeNode in='outerBlur'/>
+                <feGaussianBlur in='SourceGraphic' stdDeviation='2' result='innerBlur'/>
+                <feMergeNode in='innerBlur'/>
+                <feMergeNode in='SourceGraphic'/>
+              </feMerge>
+            </filter>
+          </defs>
+          <path d='M50 5 A45 45 0 1 0 50 95 A25 45 0 1 1 50 5' 
+                fill='url(%23goldGrad)' 
+                filter='url(%23doubleGlow)'/>
+        </svg>">
+
   <link rel="stylesheet" href="/static/css/style.css">
   <meta name="theme-color" content="#03040a" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme: light)">
@@ -40,24 +65,19 @@
 
           <g id="clockGroup" transform="translate(150,150)">
             <circle r="140" fill="url(#clockGrad)" stroke="#173e57" stroke-width="3"></circle>
-
             <g id="marks"></g>
-
             <g id="hands">
               <line id="hourHand" x1="0" y1="0" x2="0" y2="-60" stroke-linecap="round" stroke-width="8" stroke="#a3f6ff"/>
               <line id="minuteHand" x1="0" y1="0" x2="0" y2="-90" stroke-linecap="round" stroke-width="5" stroke="#e6fbff"/>
               <line id="secondHand" x1="0" y1="0" x2="0" y2="-110" stroke-linecap="round" stroke-width="2" stroke="#ff6b6b"/>
             </g>
-
             <g id="pendulumGroup" transform="translate(0,40)">
               <line id="pendulumRod" x1="0" y1="0" x2="0" y2="80" stroke="#aab" stroke-width="2" stroke-linecap="round"/>
               <circle id="pendulumBob" cx="0" cy="95" r="10" fill="#ffd166" stroke="#c88" stroke-width="1.5"/>
             </g>
-
             <circle r="6" fill="#00121a" stroke="#66d9ff" stroke-width="1.2"></circle>
           </g>
         </svg>
-
         <div id="dateText" class="dateText neon">—</div>
       </div>
 
