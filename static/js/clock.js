@@ -75,9 +75,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
     dateText.textContent = now.toLocaleDateString();
   }
 
-  function loop(){
-    updateSVGClock();
+  let last=0, active=true;
+  const TARGET_FPS = matchMedia('(prefers-reduced-motion: reduce)').matches ? 30 : 60;
+  const FRAME_MIN = 1000 / TARGET_FPS;
+  function loop(ts){
+    if (active && (!last || ts - last >= FRAME_MIN)) {
+      updateSVGClock();
+      last = ts;
+    }
     requestAnimationFrame(loop);
   }
+  document.addEventListener('visibilitychange', ()=> active = (document.visibilityState === 'visible'));
+  window.addEventListener('blur',  ()=> active = false);
+  window.addEventListener('focus', ()=> { last = 0; active = true; });
   requestAnimationFrame(loop);
 });
