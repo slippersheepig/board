@@ -1,8 +1,9 @@
 const bgCanvas = document.getElementById('bgCanvas');
-const bgCtx = bgCanvas.getContext('2d');
+let bgCtx = bgCanvas.getContext('2d', { alpha: false, desynchronized: true });
 
+const MAX_DPR = 1.25;
 function resizeBG(){
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
   bgCanvas.width = Math.floor(window.innerWidth * dpr);
   bgCanvas.height = Math.floor(window.innerHeight * dpr);
   bgCanvas.style.width = window.innerWidth + 'px';
@@ -20,7 +21,8 @@ const NEBULA_TIME_SCALE = 0.00006;
 let stars = [];
 function initStars(){
   stars = [];
-  const count = Math.max(60, Math.floor(window.innerWidth * window.innerHeight * STAR_DENSITY));
+  const area = window.innerWidth * window.innerHeight;
+  const count = Math.min(900, Math.max(120, Math.floor(area * STAR_DENSITY)));
   for(let i=0;i<count;i++){
     const baseAmp = (Math.random() * 0.8 + 0.4) * STAR_MOVE_AMPLITUDE;
     stars.push({
@@ -96,10 +98,20 @@ function drawStars(nowMs){
   bgCtx.globalAlpha = 1;
 }
 
+let animActive = true, lastTs = 0;
+const TARGET_FPS = matchMedia('(prefers-reduced-motion: reduce)').matches ? 30 : 60;
+const FRAME_MIN = 1000 / TARGET_FPS;
 function bgLoop(ts){
-  drawStars(ts || performance.now());
+  if (!animActive) { requestAnimationFrame(bgLoop); return; }
+  if (!lastTs || ts - lastTs >= FRAME_MIN) {
+    drawStars(ts || performance.now());
+    lastTs = ts;
+  }
   requestAnimationFrame(bgLoop);
 }
+document.addEventListener('visibilitychange', ()=> animActive = (document.visibilityState === 'visible'));
+window.addEventListener('blur',  ()=> animActive = false);
+window.addEventListener('focus', ()=> { lastTs = 0; animActive = true; });
 requestAnimationFrame(bgLoop);
 
 const toolArea = document.getElementById('toolArea');
