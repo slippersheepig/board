@@ -1,9 +1,10 @@
 name: Build and Publish Docker image
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Auto Merge Dependabot PRs"]
+    types:
+      - completed
 
 jobs:
   build:
