@@ -1,6 +1,7 @@
 name: Build and Push Multi-Arch Docker Image
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Auto Merge Dependabot PRs"]
     types:
