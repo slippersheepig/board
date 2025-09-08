@@ -39,3 +39,5 @@ jobs:
             linux/ppc64le
             linux/riscv64
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/board:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
