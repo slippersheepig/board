@@ -117,19 +117,35 @@ requestAnimationFrame(bgLoop);
 const toolArea = document.getElementById('toolArea');
 const buttons = document.querySelectorAll('#toolButtons button');
 const loaded = new Map();
+let activeToolName = null;
 
 function showHint(msg){
   if (toolArea) toolArea.innerHTML = `<div class="hint">${msg}</div>`;
 }
 showHint('点击上方按钮加载对应小工具');
 
+function invokeLifecycle(name, hookName){
+  const entry = loaded.get(name);
+  if (entry && typeof entry[hookName] === 'function') {
+    entry[hookName]();
+  }
+}
+
 async function loadTool(name){
   if(!toolArea) return;
+
+  if (activeToolName && activeToolName !== name) {
+    invokeLifecycle(activeToolName, 'onHide');
+  }
+
   if(loaded.has(name)){
     toolArea.innerHTML = '';
-    toolArea.appendChild(loaded.get(name));
+    toolArea.appendChild(loaded.get(name).wrapper);
+    invokeLifecycle(name, 'onShow');
+    activeToolName = name;
     return;
   }
+
   showHint('模块加载中…');
   try{
     const module = await import(`./tools/${name}.js`);
@@ -141,9 +157,15 @@ async function loadTool(name){
     wrapper.style.justifyContent = 'center';
     wrapper.style.width = '100%';
     wrapper.appendChild(el);
-    loaded.set(name, wrapper);
+    loaded.set(name, {
+      wrapper,
+      onShow: typeof el.onToolShow === 'function' ? ()=> el.onToolShow() : null,
+      onHide: typeof el.onToolHide === 'function' ? ()=> el.onToolHide() : null,
+    });
     toolArea.innerHTML = '';
     toolArea.appendChild(wrapper);
+    invokeLifecycle(name, 'onShow');
+    activeToolName = name;
   }catch(err){
     console.error(err);
     showHint('加载失败：' + (err.message||err));
