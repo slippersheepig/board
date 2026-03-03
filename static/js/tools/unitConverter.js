@@ -38,12 +38,10 @@ export async function init(){
   const lenFrom = c.querySelector('#lenFrom');
   const lenTo = c.querySelector('#lenTo');
   const lenOut = c.querySelector('#lenOut');
-
   const tpVal = c.querySelector('#tpVal');
   const tpFrom = c.querySelector('#tpFrom');
   const tpTo = c.querySelector('#tpTo');
   const tpOut = c.querySelector('#tpOut');
-
   const lenConvertBtn = c.querySelector('#lenConvertBtn');
   const tpConvertBtn = c.querySelector('#tpConvertBtn');
 
@@ -64,12 +62,13 @@ export async function init(){
     lenOut.textContent = Number.isFinite(out) ? `结果：${fmtNum(out)} ${to}` : '结果：--';
   }
 
+  function convertTemp(){
     const v = Number.parseFloat((tpVal.value || '').trim());
     if(!Number.isFinite(v)) {
       tpOut.textContent = '结果：--';
       return;
     }
-  
+   
     const from = tpFrom.value;
     const to = tpTo.value;
     let cval = v;
