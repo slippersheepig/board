@@ -25,12 +25,13 @@ export async function init(){
     </div>
   `;
 
+  const numberFormatter = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 6 });
   function fmtNum(v){
     if(typeof v !== 'number' || !isFinite(v)) return '--';
     const rounded = Math.round(v * 1e6) / 1e6;
     const asString = '' + rounded;
     if(!asString.includes('.')) return asString;
-    return asString.replace(/0+$/, '').replace(/\.$/, '');
+    return numberFormatter.format(rounded);
   }
 
   const lenVal = c.querySelector('#lenVal');
@@ -46,26 +47,29 @@ export async function init(){
   const lenConvertBtn = c.querySelector('#lenConvertBtn');
   const tpConvertBtn = c.querySelector('#tpConvertBtn');
 
-  lenConvertBtn.onclick = ()=>{
-    const v = parseFloat(lenVal.value || '0');
+  function convertLength(){
+    const v = Number.parseFloat((lenVal.value || '').trim());
+    if(!Number.isFinite(v)) {
+      lenOut.textContent = '结果：--';
+      return;
+    }
     const from = lenFrom.value;
     const to = lenTo.value;
-    let m = v;
-    if(from === 'cm') m = v / 100;
-    if(from === 'ft') m = v * 0.3048;
-    let out = m;
-    if(to === 'cm') out = m * 100;
-    if(to === 'ft') out = m / 0.3048;
+    const unitToMeter = { m: 1, cm: 0.01, ft: 0.3048 };
+    const meterToUnit = { m: 1, cm: 100, ft: 1 / 0.3048 };
 
-    if(typeof out === 'number' && isFinite(out)) {
-      lenOut.textContent = '结果：' + fmtNum(out);
-    } else {
-      lenOut.textContent = '结果：--';
+    const meters = v * (unitToMeter[from] ?? 1);
+    const out = meters * (meterToUnit[to] ?? 1);
+
+    lenOut.textContent = Number.isFinite(out) ? `结果：${fmtNum(out)} ${to}` : '结果：--';
+  }
+
+    const v = Number.parseFloat((tpVal.value || '').trim());
+    if(!Number.isFinite(v)) {
+      tpOut.textContent = '结果：--';
+      return;
     }
-  };
-
-  function convertTemp(){
-    const v = parseFloat(tpVal.value || '0');
+  
     const from = tpFrom.value;
     const to = tpTo.value;
     let cval = v;
@@ -73,7 +77,7 @@ export async function init(){
     let out = cval;
     if(to === 'F') out = cval * 9/5 + 32;
     if(typeof out === 'number' && isFinite(out)) {
-      tpOut.textContent = '结果：' + fmtNum(out);
+      tpOut.textContent = `结果：${fmtNum(out)} ${to === 'C' ? '℃' : '℉'}`;
     } else {
       tpOut.textContent = '结果：--';
     }
@@ -82,6 +86,7 @@ export async function init(){
   lenVal.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') lenConvertBtn.click(); });
   tpVal.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tpConvertBtn.click(); });
 
+  lenConvertBtn.addEventListener('click', convertLength);
   tpConvertBtn.addEventListener('click', convertTemp);
 
   return c;
