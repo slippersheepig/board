@@ -28,7 +28,9 @@ export async function init(){
   function fmtNum(v){
     if(typeof v !== 'number' || !isFinite(v)) return '--';
     const rounded = Math.round(v * 1e6) / 1e6;
-    return ('' + rounded).replace(/\.?0+$/, '');
+    const asString = '' + rounded;
+    if(!asString.includes('.')) return asString;
+    return asString.replace(/0+$/, '').replace(/\.$/, '');
   }
 
   const lenVal = c.querySelector('#lenVal');
