@@ -115,13 +115,40 @@ function safeEvaluate(expr){
 
 export async function init(){
   const container = document.createElement('div');
+  container.className = 'calc-widget';
   container.innerHTML = `
-    <div style="display:flex;gap:8px;align-items:center">
-      <input id="calcExpr" placeholder="例如 12/3 + 4" style="flex:1;padding:6px;border-radius:6px"/>
-      <button id="calcGo">计算</button>
+    <div class="calc-screen-wrap">
+      <input id="calcExpr" class="calc-screen" placeholder="0" aria-label="计算表达式" readonly />
+      <div id="calcOut" class="calc-out">点击数字和运算符开始计算</div>
     </div>
-    <div id="calcOut" style="margin-top:8px;color:var(--muted)"></div>
+    <div class="calc-pad" role="group" aria-label="计算器按键">
+      <button class="calc-key calc-key-fn" data-val="clear">C</button>
+      <button class="calc-key calc-key-fn" data-val="(">(</button>
+      <button class="calc-key calc-key-fn" data-val=")">)</button>
+      <button class="calc-key calc-key-op" data-val="/">÷</button>
+
+      <button class="calc-key" data-val="7">7</button>
+      <button class="calc-key" data-val="8">8</button>
+      <button class="calc-key" data-val="9">9</button>
+      <button class="calc-key calc-key-op" data-val="*">×</button>
+
+      <button class="calc-key" data-val="4">4</button>
+      <button class="calc-key" data-val="5">5</button>
+      <button class="calc-key" data-val="6">6</button>
+      <button class="calc-key calc-key-op" data-val="-">-</button>
+
+      <button class="calc-key" data-val="1">1</button>
+      <button class="calc-key" data-val="2">2</button>
+      <button class="calc-key" data-val="3">3</button>
+      <button class="calc-key calc-key-op" data-val="+">+</button>
+
+      <button class="calc-key calc-key-fn" data-val="back">⌫</button>
+      <button class="calc-key" data-val="0">0</button>
+      <button class="calc-key" data-val=".">.</button>
+      <button class="calc-key calc-key-eq" data-val="=">=</button>
+    </div>
   `;
+
   const expr = container.querySelector('#calcExpr');
   const out = container.querySelector('#calcOut');
 
@@ -134,7 +161,27 @@ export async function init(){
     }
   }
 
-  container.querySelector('#calcGo').addEventListener('click', run);
-  expr.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') run(); });
+  container.querySelectorAll('.calc-key').forEach((btn)=>{
+    btn.addEventListener('click', ()=>{
+      const val = btn.dataset.val;
+      if(val === 'clear'){
+        expr.value = '';
+        out.textContent = '已清空';
+        return;
+      }
+      if(val === 'back'){
+        expr.value = expr.value.slice(0, -1);
+        out.textContent = expr.value ? '继续输入' : '已清空';
+        return;
+      }
+      if(val === '='){
+        run();
+        return;
+      }
+      expr.value += val;
+      out.textContent = '继续输入';
+    });
+  });
+
   return container;
 }
