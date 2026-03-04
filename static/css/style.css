@@ -127,3 +127,76 @@ html, body {
   .toolButtons button{flex:1 1 45%}
   .toolArea{min-height:140px}
 }
+
+.calc-widget {
+  width: min(360px, 96%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calc-screen-wrap {
+  width: 100%;
+}
+
+.calc-screen {
+  width: 100%;
+  font-size: 22px;
+  text-align: right;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.calc-out {
+  margin-top: 6px;
+  text-align: right;
+  color: var(--muted);
+  min-height: 20px;
+}
+
+.calc-pad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.calc-key {
+  width: 100%;
+  min-height: 44px;
+  font-size: 18px;
+  border-radius: 10px;
+}
+
+.calc-key-op { color: #9ee6ff; }
+.calc-key-fn { color: #ffdca7; }
+.calc-key-eq {
+  background: linear-gradient(90deg, rgba(102,217,255,0.35), rgba(170,230,255,0.12));
+}
+
+.quote-widget {
+  width: min(520px, 96%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quote-title {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.quote-text {
+  font-size: 18px;
+  line-height: 1.7;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.quote-meta {
+  font-size: 13px;
+  color: var(--muted);
+}
