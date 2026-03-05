@@ -17,7 +17,11 @@ export async function init(){
     const controller = new AbortController();
     const timer = setTimeout(()=> controller.abort(), 5000);
     try {
-      const resp = await fetch('/api/daily-quote', { method: 'GET', signal: controller.signal });
+      const resp = await fetch('/api/daily-quote', {
+        method: 'GET',
+        signal: controller.signal,
+        cache: 'no-store',
+      });
       if(!resp.ok) throw new Error(`http-${resp.status}`);
       const data = await resp.json();
       textEl.textContent = data.quote || '你瞅啥';

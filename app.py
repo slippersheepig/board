@@ -41,7 +41,14 @@ def _extract_quote(response_data: dict) -> str:
     if not choices:
         return DAILY_QUOTE_FALLBACK
     message = (choices[0] or {}).get("message") or {}
-    content = (message.get("content") or "").strip()
+    content = message.get("content") or ""
+    if isinstance(content, list):
+        text_parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text_parts.append(item.get("text") or "")
+        content = "".join(text_parts)
+    content = str(content).strip()
     return content or DAILY_QUOTE_FALLBACK
 
 
@@ -104,7 +111,8 @@ def daily_quote():
 
     today = _today_str()
     with QUOTE_LOCK:
-        if QUOTE_CACHE["date"] != today:
+        should_refresh = QUOTE_CACHE["date"] != today or QUOTE_CACHE["is_fallback"]
+        if should_refresh:
             quote, is_fallback = _call_quote_api(today)
             QUOTE_CACHE["quote"] = quote
             QUOTE_CACHE["is_fallback"] = is_fallback
