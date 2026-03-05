@@ -16,6 +16,7 @@ DAILY_QUOTE_FALLBACK = "你瞅啥"
 QUOTE_CACHE = {
     "date": None,
     "quote": DAILY_QUOTE_FALLBACK,
+    "is_fallback": True,
 }
 QUOTE_LOCK = threading.Lock()
 
@@ -44,13 +45,13 @@ def _extract_quote(response_data: dict) -> str:
     return content or DAILY_QUOTE_FALLBACK
 
 
-def _call_quote_api(today: str) -> str:
+def _call_quote_api(today: str) -> tuple[str, bool]:
     api_key = os.environ.get("DAILY_QUOTE_API_KEY", "")
     api_url = os.environ.get("DAILY_QUOTE_API_URL", "")
     model_name = os.environ.get("DAILY_QUOTE_MODEL", "")
 
     if not api_key or not api_url or not model_name:
-        return DAILY_QUOTE_FALLBACK
+        return DAILY_QUOTE_FALLBACK, True
 
     payload = {
         "model": model_name,
@@ -77,9 +78,10 @@ def _call_quote_api(today: str) -> str:
     try:
         with urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            return _extract_quote(data)
+            quote = _extract_quote(data)
+            return quote, quote == DAILY_QUOTE_FALLBACK
     except (URLError, HTTPError, TimeoutError, json.JSONDecodeError):
-        return DAILY_QUOTE_FALLBACK
+        return DAILY_QUOTE_FALLBACK, True
 
 
 def _check_rate_limit(client_ip: str) -> bool:
@@ -103,12 +105,15 @@ def daily_quote():
     today = _today_str()
     with QUOTE_LOCK:
         if QUOTE_CACHE["date"] != today:
-            QUOTE_CACHE["quote"] = _call_quote_api(today)
+            quote, is_fallback = _call_quote_api(today)
+            QUOTE_CACHE["quote"] = quote
+            QUOTE_CACHE["is_fallback"] = is_fallback
             QUOTE_CACHE["date"] = today
 
         quote = QUOTE_CACHE["quote"] or DAILY_QUOTE_FALLBACK
+        is_fallback = QUOTE_CACHE["is_fallback"]
 
-    return jsonify({"quote": quote, "date": today})
+    return jsonify({"quote": quote, "date": today, "isFallback": is_fallback})
 
 
 if __name__ == "__main__":

@@ -14,15 +14,23 @@ export async function init(){
   async function loadQuote(){
     textEl.textContent = '加载中...';
     metaEl.textContent = '';
+    const controller = new AbortController();
+    const timer = setTimeout(()=> controller.abort(), 5000);
     try {
-      const resp = await fetch('/api/daily-quote', { method: 'GET' });
+      const resp = await fetch('/api/daily-quote', { method: 'GET', signal: controller.signal });
       if(!resp.ok) throw new Error(`http-${resp.status}`);
       const data = await resp.json();
       textEl.textContent = data.quote || '你瞅啥';
-      metaEl.textContent = data.date ? `日期：${data.date}` : '';
+      if(data.isFallback){
+        metaEl.textContent = data.date ? `日期：${data.date}（已启用兜底文案）` : '已启用兜底文案';
+      }else{
+        metaEl.textContent = data.date ? `日期：${data.date}` : '';
+      }
     } catch {
       textEl.textContent = '你瞅啥';
       metaEl.textContent = '已启用兜底文案';
+    } finally {
+      clearTimeout(timer);
     }
   }
 
