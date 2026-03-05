@@ -223,3 +223,30 @@ html, body {
   font-size: 13px;
   color: var(--muted);
 }
+
+.quote-debug {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 8px 10px;
+}
+
+.quote-debug summary {
+  cursor: pointer;
+  color: #9ee6ff;
+  font-size: 13px;
+  user-select: none;
+}
+
+.quote-debug pre {
+  margin: 8px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #d8f3ff;
+}
