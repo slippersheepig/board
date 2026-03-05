@@ -17,6 +17,7 @@ QUOTE_CACHE = {
     "date": None,
     "quote": DAILY_QUOTE_FALLBACK,
     "is_fallback": True,
+    "debug": {},
 }
 QUOTE_LOCK = threading.Lock()
 
@@ -83,13 +84,33 @@ def _extract_quote(response_data: dict) -> str:
     return DAILY_QUOTE_FALLBACK
 
 
-def _call_quote_api(today: str) -> tuple[str, bool]:
+def _truncate_text(value: object, limit: int = 800) -> str:
+    text = _stringify_content(value)
+    if len(text) <= limit:
+        return text
+    return text[:limit].strip() + "…"
+
+
+def _call_quote_api(today: str) -> tuple[str, bool, dict]:
     api_key = os.environ.get("DAILY_QUOTE_API_KEY", "")
     api_url = os.environ.get("DAILY_QUOTE_API_URL", "")
     model_name = os.environ.get("DAILY_QUOTE_MODEL", "")
 
     if not api_key or not api_url or not model_name:
-        return DAILY_QUOTE_FALLBACK, True
+        missing = [
+            name
+            for name, value in (
+                ("DAILY_QUOTE_API_KEY", api_key),
+                ("DAILY_QUOTE_API_URL", api_url),
+                ("DAILY_QUOTE_MODEL", model_name),
+            )
+            if not value
+        ]
+        return DAILY_QUOTE_FALLBACK, True, {
+            "stage": "config",
+            "error": "missing_env",
+            "missing": missing,
+        }
 
     payload = {
         "model": model_name,
@@ -116,11 +137,46 @@ def _call_quote_api(today: str) -> tuple[str, bool]:
 
     try:
         with urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            status_code = getattr(resp, "status", None)
+            raw_text = resp.read().decode("utf-8", errors="replace")
+            data = json.loads(raw_text)
             quote = _extract_quote(data)
-            return quote, quote == DAILY_QUOTE_FALLBACK
-    except (URLError, HTTPError, TimeoutError, json.JSONDecodeError):
-        return DAILY_QUOTE_FALLBACK, True
+            is_fallback = quote == DAILY_QUOTE_FALLBACK
+            debug = {
+                "stage": "response",
+                "status": status_code,
+                "is_json": True,
+                "excerpt": _truncate_text(raw_text),
+            }
+            if is_fallback:
+                debug["error"] = "empty_quote"
+            return quote, is_fallback, debug
+    except HTTPError as err:
+        err_body = err.read().decode("utf-8", errors="replace")
+        return DAILY_QUOTE_FALLBACK, True, {
+            "stage": "request",
+            "error": "http_error",
+            "status": err.code,
+            "excerpt": _truncate_text(err_body),
+        }
+    except json.JSONDecodeError as err:
+        return DAILY_QUOTE_FALLBACK, True, {
+            "stage": "response",
+            "error": "invalid_json",
+            "status": 200,
+            "detail": str(err),
+        }
+    except TimeoutError:
+        return DAILY_QUOTE_FALLBACK, True, {
+            "stage": "request",
+            "error": "timeout",
+        }
+    except URLError as err:
+        return DAILY_QUOTE_FALLBACK, True, {
+            "stage": "request",
+            "error": "url_error",
+            "detail": str(err.reason),
+        }
 
 
 def _check_rate_limit(client_ip: str) -> bool:
@@ -144,21 +200,28 @@ def daily_quote():
             "date": _today_str(),
             "error": "rate_limited",
             "isFallback": True,
+            "debug": {
+                "stage": "gateway",
+                "error": "rate_limited",
+                "status": 429,
+            },
         }), 429
 
     today = _today_str()
     with QUOTE_LOCK:
         should_refresh = QUOTE_CACHE["date"] != today or QUOTE_CACHE["is_fallback"]
         if should_refresh:
-            quote, is_fallback = _call_quote_api(today)
+            quote, is_fallback, debug = _call_quote_api(today)
             QUOTE_CACHE["quote"] = quote
             QUOTE_CACHE["is_fallback"] = is_fallback
             QUOTE_CACHE["date"] = today
+            QUOTE_CACHE["debug"] = debug
 
         quote = QUOTE_CACHE["quote"] or DAILY_QUOTE_FALLBACK
         is_fallback = QUOTE_CACHE["is_fallback"]
+        debug = QUOTE_CACHE.get("debug") or {}
 
-    return jsonify({"quote": quote, "date": today, "isFallback": is_fallback})
+    return jsonify({"quote": quote, "date": today, "isFallback": is_fallback, "debug": debug})
 
 
 if __name__ == "__main__":
