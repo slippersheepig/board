@@ -36,20 +36,51 @@ def _today_str() -> str:
     return now.strftime("%Y-%m-%d")
 
 
-def _extract_quote(response_data: dict) -> str:
-    choices = response_data.get("choices") or []
-    if not choices:
-        return DAILY_QUOTE_FALLBACK
-    message = (choices[0] or {}).get("message") or {}
-    content = message.get("content") or ""
+def _stringify_content(content: object) -> str:
     if isinstance(content, list):
         text_parts = []
         for item in content:
-            if isinstance(item, dict) and item.get("type") == "text":
-                text_parts.append(item.get("text") or "")
-        content = "".join(text_parts)
-    content = str(content).strip()
-    return content or DAILY_QUOTE_FALLBACK
+            if isinstance(item, dict):
+                if item.get("type") == "text":
+                    text_parts.append(item.get("text") or "")
+                elif "content" in item:
+                    text_parts.append(str(item.get("content") or ""))
+            elif item is not None:
+                text_parts.append(str(item))
+        return "".join(text_parts).strip()
+    return str(content or "").strip()
+
+
+def _extract_quote(response_data: dict) -> str:
+    choices = response_data.get("choices") or []
+    if choices:
+        first_choice = choices[0] or {}
+        message = first_choice.get("message") or {}
+        content = _stringify_content(message.get("content"))
+        if content:
+            return content
+
+        text = _stringify_content(first_choice.get("text"))
+        if text:
+            return text
+
+        delta = first_choice.get("delta") or {}
+        delta_content = _stringify_content(delta.get("content"))
+        if delta_content:
+            return delta_content
+
+    for key in ("output_text", "response", "result"):
+        value = response_data.get(key)
+        if isinstance(value, dict):
+            nested = _stringify_content(value.get("response") or value.get("output_text"))
+            if nested:
+                return nested
+        else:
+            direct = _stringify_content(value)
+            if direct:
+                return direct
+
+    return DAILY_QUOTE_FALLBACK
 
 
 def _call_quote_api(today: str) -> tuple[str, bool]:
@@ -70,6 +101,7 @@ def _call_quote_api(today: str) -> tuple[str, bool]:
             },
         ],
         "temperature": 0.8,
+        "stream": False,
     }
 
     req = Request(
@@ -107,7 +139,12 @@ def _check_rate_limit(client_ip: str) -> bool:
 def daily_quote():
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
     if not _check_rate_limit(client_ip):
-        return jsonify({"quote": DAILY_QUOTE_FALLBACK, "date": _today_str(), "error": "rate_limited"}), 429
+        return jsonify({
+            "quote": DAILY_QUOTE_FALLBACK,
+            "date": _today_str(),
+            "error": "rate_limited",
+            "isFallback": True,
+        }), 429
 
     today = _today_str()
     with QUOTE_LOCK:
