@@ -118,7 +118,7 @@ export async function init(){
   container.className = 'calc-widget';
   container.innerHTML = `
     <div class="calc-screen-wrap">
-      <input id="calcExpr" class="calc-screen" placeholder="0" aria-label="计算表达式" readonly />
+      <input id="calcExpr" class="calc-screen" placeholder="0" aria-label="计算表达式" inputmode="decimal" autocomplete="off" spellcheck="false" />
       <div id="calcOut" class="calc-out">点击数字和运算符开始计算</div>
     </div>
     <div class="calc-pad" role="group" aria-label="计算器按键">
@@ -152,6 +152,11 @@ export async function init(){
   const expr = container.querySelector('#calcExpr');
   const out = container.querySelector('#calcOut');
 
+
+  function normalizeExpr(value){
+    return (value || '').replace(/[^0-9+\-*/().]/g, '');
+  }
+
   function run(){
     try{
       const res = safeEvaluate(expr.value);
@@ -180,8 +185,33 @@ export async function init(){
       }
       expr.value += val;
       out.textContent = '继续输入';
+      expr.focus();
     });
   });
+
+  expr.addEventListener('input', ()=>{
+    const cleaned = normalizeExpr(expr.value);
+    if(cleaned !== expr.value) expr.value = cleaned;
+    out.textContent = expr.value ? '继续输入' : '已清空';
+  });
+
+  expr.addEventListener('keydown', (event)=>{
+    if(event.key === 'Enter'){
+      event.preventDefault();
+      run();
+      return;
+    }
+    if(event.key === 'Escape'){
+      expr.value = '';
+      out.textContent = '已清空';
+    }
+  });
+
+  container.onToolShow = ()=>{
+    expr.focus();
+    const end = expr.value.length;
+    expr.setSelectionRange(end, end);
+  };
 
   return container;
 }

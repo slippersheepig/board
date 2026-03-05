@@ -133,6 +133,10 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(5, 13, 22, 0.55);
+  border: 1px solid rgba(160, 230, 255, 0.12);
 }
 
 .calc-screen-wrap {
@@ -145,6 +149,9 @@ html, body {
   text-align: right;
   padding: 10px;
   border-radius: 10px;
+  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #eaf9ff;
 }
 
 .calc-out {
@@ -166,6 +173,7 @@ html, body {
   min-height: 44px;
   font-size: 18px;
   border-radius: 10px;
+  appearance: none;
 }
 
 .calc-key-op { color: #9ee6ff; }
