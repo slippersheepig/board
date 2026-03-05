@@ -132,6 +132,9 @@ def _call_quote_api(today: str) -> tuple[str, bool, dict]:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "curl/7.88.1",
+            "Accept": "application/json",
+            "Connection": "close",
         },
     )
 
