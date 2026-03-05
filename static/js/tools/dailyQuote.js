@@ -26,7 +26,8 @@ export async function init(){
       const data = await resp.json();
       textEl.textContent = data.quote || '你瞅啥';
       if(data.isFallback){
-        metaEl.textContent = data.date ? `日期：${data.date}（已启用兜底文案）` : '已启用兜底文案';
+        const reason = data.error ? `，原因：${data.error}` : '';
+        metaEl.textContent = data.date ? `日期：${data.date}（已启用兜底文案${reason}）` : `已启用兜底文案${reason}`;
       }else{
         metaEl.textContent = data.date ? `日期：${data.date}` : '';
       }
