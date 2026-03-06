@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import threading
 import time
 from collections import defaultdict, deque
@@ -20,6 +21,10 @@ QUOTE_CACHE = {
     "debug": {},
 }
 QUOTE_LOCK = threading.Lock()
+
+NTP_SERVER = os.environ.get("NTP_SERVER", "ntp.aliyun.com")
+NTP_PORT = int(os.environ.get("NTP_PORT", "123"))
+NTP_TIMEOUT_SEC = float(os.environ.get("NTP_TIMEOUT_SEC", "2.5"))
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 30
@@ -225,6 +230,59 @@ def daily_quote():
         debug = QUOTE_CACHE.get("debug") or {}
 
     return jsonify({"quote": quote, "date": today, "isFallback": is_fallback, "debug": debug})
+
+
+@app.route("/api/time-sync", methods=["GET"])
+def time_sync():
+    timezone = (request.args.get("tz") or "Etc/UTC").strip()
+    try:
+        ZoneInfo(timezone)
+    except Exception:
+        return jsonify({"error": "invalid_timezone", "timezone": timezone}), 400
+
+    # NTP 授时规则：
+    # - 使用 UDP 123 端口发送 48 字节请求包，首字节设置为 0x1B（LI=0,VN=3,Mode=3 client）
+    # - 服务端回包中的 transmit timestamp（字节 40-47）是自 1900-01-01 起的时间戳
+    # - 需减去 NTP 与 Unix 纪元偏移量 2208988800 秒
+    local_utc_ms = int(time.time() * 1000)
+    ntp_epoch_offset = 2208988800
+    try:
+        packet = b"\x1b" + 47 * b"\0"
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.settimeout(NTP_TIMEOUT_SEC)
+            s.sendto(packet, (NTP_SERVER, NTP_PORT))
+            data, _ = s.recvfrom(48)
+
+        if len(data) < 48:
+            raise ValueError("invalid_ntp_packet")
+
+        seconds = int.from_bytes(data[40:44], "big")
+        fraction = int.from_bytes(data[44:48], "big")
+        unix_seconds = seconds - ntp_epoch_offset
+        remote_utc_ms = int(unix_seconds * 1000 + (fraction * 1000 / 2**32))
+
+        return jsonify(
+            {
+                "serverTimeMs": remote_utc_ms,
+                "localTimeMs": local_utc_ms,
+                "offsetMs": remote_utc_ms - local_utc_ms,
+                "timezone": timezone,
+                "source": f"ntp://{NTP_SERVER}:{NTP_PORT}",
+                "isFallback": False,
+            }
+        )
+    except (socket.timeout, OSError, ValueError):
+        # 公共授时源不可用时自动回退到本地时间，保证页面仍可运行。
+        return jsonify(
+            {
+                "serverTimeMs": local_utc_ms,
+                "localTimeMs": local_utc_ms,
+                "offsetMs": 0,
+                "timezone": timezone,
+                "source": "local-fallback",
+                "isFallback": True,
+            }
+        )
 
 
 if __name__ == "__main__":
