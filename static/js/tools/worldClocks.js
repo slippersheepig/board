@@ -1,3 +1,5 @@
+import { getSyncedNow, loadTimeOffset } from '../timeSync.js';
+
 export async function init(){
   const el = document.createElement('div');
   const zones = [
@@ -13,7 +15,7 @@ export async function init(){
 
   function render(){
     list.innerHTML = '';
-    const now = new Date();
+    const now = getSyncedNow();
     zones.forEach(z=>{
       const dstr = now.toLocaleString('zh-Hans-CN', { timeZone: z.id });
       const row = document.createElement('div');
@@ -38,6 +40,7 @@ export async function init(){
   el.onToolShow = start;
   el.onToolHide = stop;
 
+  await loadTimeOffset();
   // 首次加载立即显示
   start();
   return el;

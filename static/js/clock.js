@@ -1,4 +1,6 @@
-document.addEventListener('DOMContentLoaded', ()=>{
+import { getSyncedNow, loadTimeOffset } from './timeSync.js';
+
+document.addEventListener('DOMContentLoaded', async ()=>{
   const svgNS = "http://www.w3.org/2000/svg";
   const marksGroup = document.getElementById('marks');
   const hourHand = document.getElementById('hourHand');
@@ -49,9 +51,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   ensureMarks();
+  await loadTimeOffset();
 
   function updateSVGClock(){
-    const now = new Date();
+    const now = getSyncedNow();
     const ms = now.getMilliseconds();
     const s = now.getSeconds() + ms/1000;
     const m = now.getMinutes() + s/60;
