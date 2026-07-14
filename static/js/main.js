@@ -24,6 +24,10 @@ const TARGET_FPS = LOW_POWER ? 24 : 30;
 const FRAME_MIN = 1000 / TARGET_FPS;
 const TWO_PI = Math.PI * 2;
 const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
+const visualCache = {
+  nebula1: null, nebula2: null,
+  sun: null, earth: null, moon: null
+};
 
 let stars = [];
 let orbitCache = null;
@@ -65,26 +69,26 @@ window.addEventListener('resize', initStars);
 
 function drawNebula(nowMs){
   const w = window.innerWidth, h = window.innerHeight;
-  const now = nowMs || performance.now();
-  const t = now * NEBULA_TIME_SCALE;
+  const t = nowMs * NEBULA_TIME_SCALE;
 
+  bgCtx.globalCompositeOperation = 'screen';
+  
   const ox1 = Math.sin(t * 0.9) * (w * 0.035);
   const oy1 = Math.cos(t * 0.85) * (h * 0.025);
-  const g1 = bgCtx.createRadialGradient(w*0.75 + ox1, h*0.18 + oy1, 60, w*0.75 + ox1, h*0.18 + oy1, Math.max(w,h));
-  g1.addColorStop(0, 'rgba(44,12,80,0.12)');
-  g1.addColorStop(0.35, 'rgba(25,10,52,0.06)');
-  g1.addColorStop(1, 'rgba(0,0,0,0)');
-  bgCtx.fillStyle = g1;
-  bgCtx.fillRect(0,0,w,h);
+  if (!visualCache.nebula1) {
+    const g1 = bgCtx.createRadialGradient(0, 0, 60, 0, 0, Math.max(w,h));
+    g1.addColorStop(0, 'rgba(60, 20, 120, 0.15)');
+    g1.addColorStop(0.4, 'rgba(25, 10, 52, 0.06)');
+    g1.addColorStop(1, 'rgba(0,0,0,0)');
+    visualCache.nebula1 = g1;
+  }
+  bgCtx.save();
+  bgCtx.translate(w*0.75 + ox1, h*0.18 + oy1);
+  bgCtx.fillStyle = visualCache.nebula1;
+  bgCtx.fillRect(-w, -h, w*2, h*2);
+  bgCtx.restore();
 
-  const ox2 = Math.sin(t * 1.45 + 1.9) * (w * 0.03);
-  const oy2 = Math.cos(t * 1.2 + 1.2) * (h * 0.018);
-  const g2 = bgCtx.createRadialGradient(w*0.18 + ox2, h*0.72 + oy2, 40, w*0.18 + ox2, h*0.72 + oy2, Math.max(w,h));
-  g2.addColorStop(0, 'rgba(10,30,60,0.10)');
-  g2.addColorStop(0.6, 'rgba(5,10,30,0.03)');
-  g2.addColorStop(1, 'rgba(0,0,0,0)');
-  bgCtx.fillStyle = g2;
-  bgCtx.fillRect(0,0,w,h);
+  bgCtx.globalCompositeOperation = 'source-over';
 }
 
 function projectOrbit(cx, cy, r, angle, scaleY, tilt){
@@ -123,20 +127,39 @@ function drawLabel(text, x, y){
   bgCtx.fillText(text, x, y + 0.5);
 }
 
-function drawPlanet({x, y, r, fill, glow, label}){
-  const g = bgCtx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.15, x, y, r * 1.5);
-  fill.forEach(stop => g.addColorStop(stop[0], stop[1]));
-  bgCtx.save();
-  bgCtx.shadowColor = glow;
-  bgCtx.shadowBlur = r * 1.4;
-  bgCtx.fillStyle = g;
-  bgCtx.beginPath();
-  bgCtx.arc(x, y, r, 0, TWO_PI);
-  bgCtx.fill();
-  bgCtx.restore();
-  bgCtx.strokeStyle = 'rgba(255,255,255,0.28)';
-  bgCtx.lineWidth = 1;
-  bgCtx.stroke();
+function createPlanetTexture(r, fillStops, glowColor) {
+  const canvas = document.createElement('canvas');
+  const size = r * 4;
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  
+  const cx = size / 2, cy = size / 2;
+  const glow = ctx.createRadialGradient(cx, cy, r * 0.8, cx, cy, r * 2);
+  glow.addColorStop(0, glowColor);
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+
+  const planet = ctx.createRadialGradient(cx - r*0.35, cy - r*0.4, r*0.15, cx, cy, r*1.5);
+  fillStops.forEach(stop => planet.addColorStop(stop[0], stop[1]));
+  ctx.fillStyle = planet;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  return canvas;
+}
+
+function drawPlanet({x, y, r, fill, glow, label, id}) {
+  if (!visualCache[id]) {
+    visualCache[id] = createPlanetTexture(r, fill, glow);
+  }
+  
+  const tex = visualCache[id];
+  bgCtx.drawImage(tex, x - tex.width / 2, y - tex.height / 2);
   drawLabel(label, x, y + r + 15);
 }
 
@@ -161,16 +184,19 @@ function drawRealtimeOrbits(nowMs){
   bgCtx.stroke();
 
   drawPlanet({
+    id: 'sun',
     x: cfg.sunX, y: cfg.sunY, r: 31,
     fill: [[0, '#fff8d0'], [0.45, '#ffd166'], [1, '#f97316']],
     glow: 'rgba(255, 174, 66, 0.68)', label: '太阳'
   });
   drawPlanet({
+    id: 'earth',
     x: earth.x, y: earth.y, r: 15,
     fill: [[0, '#d9fbff'], [0.42, '#2dd4bf'], [0.72, '#2563eb'], [1, '#0f172a']],
     glow: 'rgba(59, 130, 246, 0.60)', label: '地球'
   });
   drawPlanet({
+    id: 'moon',
     x: moon.x, y: moon.y, r: 6,
     fill: [[0, '#ffffff'], [0.48, '#cbd5e1'], [1, '#64748b']],
     glow: 'rgba(226, 232, 240, 0.46)', label: '月球'
