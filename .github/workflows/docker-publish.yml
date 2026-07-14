@@ -42,5 +42,4 @@ jobs:
           linux/riscv64
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/board:latest
-        cache-from: type=gha,scope=ghcr-board
-        cache-to: type=gha,scope=ghcr-board,mode=min,ignore-error=true
+        # GHA cache export is disabled because failed cache reservations cancel image pushes.

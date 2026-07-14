@@ -46,5 +46,4 @@ jobs:
             linux/ppc64le
             linux/riscv64
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/board:latest
-          cache-from: type=gha,scope=dockerhub-board
-          cache-to: type=gha,scope=dockerhub-board,mode=min,ignore-error=true
+          # GHA cache export is disabled because failed cache reservations cancel image pushes.
