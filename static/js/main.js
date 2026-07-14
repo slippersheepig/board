@@ -51,12 +51,12 @@ function initOrbitBackground(){
   const w = window.innerWidth, h = window.innerHeight;
   const size = Math.max(w, h);
   orbitCache = {
-    sunX: w * 0.78,
-    sunY: h * 0.34,
-    earthOrbitR: Math.max(150, Math.min(size * 0.38, Math.min(w, h) * 0.58)),
-    moonOrbitR: Math.max(30, Math.min(size * 0.055, 58)),
-    tilt: -0.22,
-    scaleY: 0.58
+    sunX: w * 0.5,
+    sunY: h * 0.48,
+    earthOrbitR: Math.max(130, Math.min(size * 0.32, Math.min(w, h) * 0.42)),
+    moonOrbitR: Math.max(28, Math.min(size * 0.05, 52)),
+    tilt: -0.18,
+    scaleY: 0.62
   };
 }
 initStars();
@@ -212,9 +212,10 @@ function bgLoop(ts){
   }
   requestAnimationFrame(bgLoop);
 }
-document.addEventListener('visibilitychange', ()=> animActive = (document.visibilityState === 'visible'));
-window.addEventListener('blur',  ()=> animActive = false);
-window.addEventListener('focus', ()=> { lastTs = 0; animActive = true; });
+document.addEventListener('visibilitychange', ()=> {
+  animActive = (document.visibilityState === 'visible');
+  if (animActive) lastTs = 0;
+});
 requestAnimationFrame(bgLoop);
 
 const toolArea = document.getElementById('toolArea');
