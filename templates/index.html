@@ -51,8 +51,9 @@
         <svg id="clockSVG" viewBox="0 0 300 300" class="clockSVG" preserveAspectRatio="xMidYMid meet" aria-label="时钟">
           <defs>
             <radialGradient id="clockGrad">
-              <stop offset="0%" stop-color="#0b1220"/>
-              <stop offset="100%" stop-color="#071827"/>
+              <stop offset="0%" stop-color="#0b1220" stop-opacity="0.52"/>
+              <stop offset="68%" stop-color="#071827" stop-opacity="0.32"/>
+              <stop offset="100%" stop-color="#040a12" stop-opacity="0.18"/>
             </radialGradient>
             <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
@@ -64,7 +65,7 @@
           </defs>
 
           <g id="clockGroup" transform="translate(150,150)">
-            <circle r="140" fill="url(#clockGrad)" stroke="#173e57" stroke-width="3"></circle>
+            <circle r="140" fill="url(#clockGrad)" stroke="#66d9ff" stroke-opacity="0.42" stroke-width="3"></circle>
             <g id="marks"></g>
             <g id="hands">
               <line id="hourHand" x1="0" y1="0" x2="0" y2="-60" stroke-linecap="round" stroke-width="8" stroke="#a3f6ff"/>
