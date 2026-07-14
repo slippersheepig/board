@@ -52,8 +52,8 @@ function initOrbitBackground(){
   const size = Math.max(w, h);
   orbitCache = {
     sunX: w * 0.5,
-    sunY: h * 0.48,
-    earthOrbitR: Math.max(130, Math.min(size * 0.32, Math.min(w, h) * 0.42)),
+    sunY: h * 0.5,
+    earthOrbitR: Math.max(120, Math.min(size * 0.30, Math.min(w, h) * 0.40)),
     moonOrbitR: Math.max(28, Math.min(size * 0.05, 52)),
     tilt: -0.18,
     scaleY: 0.62
@@ -150,8 +150,8 @@ function drawRealtimeOrbits(nowMs){
   const earth = projectOrbit(cfg.sunX, cfg.sunY, cfg.earthOrbitR, earthAngle, cfg.scaleY, cfg.tilt);
   const moon = projectOrbit(earth.x, earth.y, cfg.moonOrbitR, moonAngle, 0.72, cfg.tilt + 0.55);
 
-  drawEllipseOrbit(cfg.sunX, cfg.sunY, cfg.earthOrbitR, cfg.scaleY, cfg.tilt, 'rgba(125, 215, 255, 0.17)', 1.25);
-  drawEllipseOrbit(earth.x, earth.y, cfg.moonOrbitR, 0.72, cfg.tilt + 0.55, 'rgba(230, 238, 255, 0.20)', 1);
+  drawEllipseOrbit(cfg.sunX, cfg.sunY, cfg.earthOrbitR, cfg.scaleY, cfg.tilt, 'rgba(125, 215, 255, 0.30)', 1.5);
+  drawEllipseOrbit(earth.x, earth.y, cfg.moonOrbitR, 0.72, cfg.tilt + 0.55, 'rgba(230, 238, 255, 0.34)', 1.1);
 
   bgCtx.beginPath();
   bgCtx.moveTo(earth.x, earth.y);

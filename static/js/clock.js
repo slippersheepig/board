@@ -88,8 +88,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }
     requestAnimationFrame(loop);
   }
-  document.addEventListener('visibilitychange', ()=> active = (document.visibilityState === 'visible'));
-  window.addEventListener('blur',  ()=> active = false);
-  window.addEventListener('focus', ()=> { last = 0; active = true; });
+  document.addEventListener('visibilitychange', ()=> {
+    active = (document.visibilityState === 'visible');
+    if (active) last = 0;
+  });
   requestAnimationFrame(loop);
 });

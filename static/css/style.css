@@ -57,6 +57,11 @@ html, body {
 .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:14px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.02); width:100%; max-width:980px}
 
 /* clock */
+#clockCard{
+  background: linear-gradient(180deg, rgba(3,8,18,0.10), rgba(3,8,18,0.04));
+  border-color: rgba(102,217,255,0.07);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.24);
+}
 .clockSVG{width:520px; height:520px; display:block; margin:6px auto; background:transparent}
 #dateText{margin-top:10px; text-align:center; font-weight:700; letter-spacing:0.8px}
 .dateText.neon{
