@@ -1,13 +1,13 @@
 :root {
-  --bg1: #03040a;
-  --bg2: #07121a;
-  --card: rgba(255,255,255,0.03);
-  --accent: #66d9ff;
-  --muted: rgba(255,255,255,0.65);
-  --neon: rgba(102,217,255,0.14);
-  --glass: rgba(255,255,255,0.03);
-  --btn-glow: 0 6px 24px rgba(102,217,255,0.12);
-  --btn-glow-strong: 0 12px 48px rgba(102,217,255,0.18);
+  --bg1: #02050a;
+  --bg2: #060b13;
+  --card: rgba(10, 18, 30, 0.45);
+  --accent: #00f0ff;
+  --muted: rgba(255,255,255,0.55);
+  --neon: rgba(0, 240, 255, 0.2);
+  --glass: rgba(16, 24, 40, 0.6);
+  --btn-glow: 0 4px 15px rgba(0, 240, 255, 0.15);
+  --btn-glow-strong: 0 8px 25px rgba(0, 240, 255, 0.35);
   --roman-color: #ffdca7;
 }
 
@@ -54,7 +54,19 @@ html, body {
 #centerColumn{width:100%; display:flex; flex-direction:column; gap:18px; align-items:center}
 
 /* cards */
-.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:14px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.02); width:100%; max-width:980px}
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 14px; 
+  border-radius: 16px; 
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05); 
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  width: 100%; 
+  max-width: 980px;
+  will-change: transform;
+  transform: translateZ(0); 
+}
 
 /* clock */
 #clockCard{
@@ -64,14 +76,18 @@ html, body {
 }
 .clockSVG{width:520px; height:520px; display:block; margin:6px auto; background:transparent}
 #dateText{margin-top:10px; text-align:center; font-weight:700; letter-spacing:0.8px}
-.dateText.neon{
-  font-size:18px;
-  background: linear-gradient(90deg, #aef7ff, #c6ffe7);
+.dateText.neon {
+  font-size: 18px;
+  background: linear-gradient(90deg, #00f0ff, #7000ff, #00f0ff);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow:
-    0 0 6px rgba(160,240,255,0.12),
-    0 6px 18px rgba(0,0,0,0.45);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+  animation: shine 4s linear infinite;
+}
+
+@keyframes shine {
+  to { background-position: 200% center; }
 }
 
 /* tools title centered */
@@ -79,8 +95,26 @@ html, body {
 
 /* tool buttons */
 .toolButtons{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; justify-content:center}
-.toolButtons button{background:linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); color:#eaf9ff; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; box-shadow: var(--btn-glow); transition:transform .12s, box-shadow .12s, background .12s; font-weight:700; font-size:14px}
-.toolButtons button:hover{transform:translateY(-4px); box-shadow:var(--btn-glow-strong); background:linear-gradient(135deg, rgba(102,217,255,0.06), rgba(255,255,255,0.02))}
+.toolButtons button {
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); 
+  color: #eaf9ff; 
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  padding: 10px 14px; 
+  border-radius: 12px; 
+  cursor: pointer; 
+  box-shadow: var(--btn-glow); 
+  font-weight: 700; 
+  font-size: 14px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  will-change: transform, box-shadow;
+}
+
+.toolButtons button:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--btn-glow-strong); 
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255,255,255,0.02));
+}
 
 /* tool area: center loaded content */
 .toolArea{margin-top:12px; min-height:160px; color:var(--muted); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
