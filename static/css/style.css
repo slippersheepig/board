@@ -13,23 +13,38 @@
 
 * { box-sizing: border-box }
 
+html {
+  height: 100%;
+}
+
 html, body {
   min-height: 100vh;
-  min-height: -webkit-fill-available; 
+  min-height: -webkit-fill-available;
+  min-height: 100dvh; /* 现代浏览器：动态视口高度，比 100vh 更贴合 Safari 实际可视区域 */
   margin: 0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #02050a; 
-  background: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
+  /* 关键修复：background-color 必须和渐变分开写。
+     之前 `background: 渐变...` 简写会把上面的 background-color 重置为 transparent，
+     导致 Safari 在「橡皮筋回弹区」和「刘海/Home 指示条安全区」找不到纯色兜底，
+     只能显示 WebView 默认的白色——也就是页面上下的白条。 */
+  background-color: #02050a;
+  background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
               linear-gradient(120deg, var(--bg1), var(--bg2));
   color: #e8f6ff;
-  overflow-x: hidden; 
+  overflow-x: hidden;
+  overscroll-behavior-y: none; /* 禁用整页橡皮筋回弹，从源头上消除露白的可能 */
+}
+
+body {
+  min-height: 100%;
 }
 
 @media (prefers-color-scheme: light) {
   html, body {
-    background: radial-gradient(1200px 800px at 10% 10%, rgba(245,247,250,0.8), transparent),
+    background-color: #f5f7fa;
+    background-image: radial-gradient(1200px 800px at 10% 10%, rgba(245,247,250,0.8), transparent),
                 linear-gradient(120deg, #f5f7fa, #dfe9f3);
     color: #111;
   }
@@ -37,7 +52,8 @@ html, body {
 
 @media (prefers-color-scheme: dark) {
   html, body {
-    background: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
+    background-color: #02050a;
+    background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
                 linear-gradient(120deg, var(--bg1), var(--bg2));
     color: #e8f6ff;
   }
@@ -47,13 +63,22 @@ html, body {
 #bgCanvas { position: fixed; inset: 0; z-index: 0 }
 
 /* header merged and centered */
-#topbar { position: relative; z-index: 2; padding: 18px 28px; display: flex; justify-content: center; align-items: center; text-align: center }
+#topbar {
+  position: relative;
+  z-index: 2;
+  padding: 18px 28px;
+  padding-top: max(18px, env(safe-area-inset-top)); /* 避开刘海/灵动岛/状态栏 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 #topTitle { display: flex; flex-direction: column; align-items: center }
 .title { font-size: 22px; font-weight: 700; letter-spacing: 0.6px }
 .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px }
 
 /* main centered area */
-#container{position:relative; z-index:2; max-width:1100px; margin:18px auto; display:flex; gap:20px; padding:0 20px; align-items:flex-start; justify-content:center}
+#container{position:relative; z-index:2; max-width:1100px; margin:18px auto; display:flex; gap:20px; padding:0 20px calc(20px + env(safe-area-inset-bottom)); align-items:flex-start; justify-content:center}
 #centerColumn{width:100%; display:flex; flex-direction:column; gap:18px; align-items:center}
 
 /* cards */
