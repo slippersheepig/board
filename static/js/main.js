@@ -12,6 +12,11 @@ function resizeBG(){
   initOrbitBackground();
 }
 window.addEventListener('resize', resizeBG);
+// iOS Safari 地址栏收起/展开时，window resize 事件常有延迟；
+// visualViewport 能更及时地反映真实可视区域，避免 canvas 尺寸短暂跟不上导致露出背景色以外的区域。
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resizeBG);
+}
 
 const STAR_DENSITY = 0.00018;
 const STAR_MOVE_AMPLITUDE = 8;
