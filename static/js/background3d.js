@@ -149,9 +149,11 @@ export function init(THREE, canvas, options = {}) {
   scene.add(layerNear.points);
 
   // ================= 二、光照 =================
-  // 太阳处一盏强点光源 + 低强度环境光 + 一盏冷色补光，让行星有立体明暗
-  scene.add(new THREE.AmbientLight(0x30405a, 0.9));
-  const sunLight = new THREE.PointLight(0xffe0b0, 2.4, 1200, 1.4);
+  // ⚠️ three r155+ 默认物理光照单位：点光源衰减 = intensity / distance^decay。
+  // 行星距离太阳 62~185，必须用 decay=1 且 intensity 按距离量级取值，
+  // 否则照到行星上的光强趋近于 0（r160 实测会几乎全黑）。
+  scene.add(new THREE.AmbientLight(0x30405a, 1.0));
+  const sunLight = new THREE.PointLight(0xffe0b0, 180, 0, 1); // decay=1：水星≈2.9 / 地球≈1.5 / 火星≈1.0
   scene.add(sunLight);
   const rimLight = new THREE.DirectionalLight(0x8899ff, 0.35);
   rimLight.position.set(-300, 200, 400);
@@ -243,6 +245,7 @@ export function init(THREE, canvas, options = {}) {
 
   function addPlanet({ orbitR, radius, color, bandColor, speed, phase }) {
     const pivot = new THREE.Group();
+    pivot.rotation.y = phase || 0; // 初始相位：避免行星开局排在同一条直线上
 
     // 轨道线
     const ring = new THREE.LineLoop(
@@ -289,17 +292,19 @@ export function init(THREE, canvas, options = {}) {
     holder.add(mesh);
 
     system.add(pivot);
-    planets.push({
+    const entry = {
       pivot, holder, mesh, flow, flowN: FLOW_N, orbitR,
       speed: speed * 60,
       flowSpeed: speed * 60 * 4,
       phase: phase || 0,
       spin: 0.25 + Math.random() * 0.35
-    });
+    };
+    planets.push(entry);
+    return entry;
   }
 
   addPlanet({ orbitR: 62,  radius: 7,  color: '#c8a06a', bandColor: '#8f6f42', speed: 0.0016,  phase: 0.6 });
-  addPlanet({ orbitR: 118, radius: 14, color: '#3f8fd8', bandColor: '#7ec97e', speed: 0.0010,  phase: 2.2 });
+  const earthEntry = addPlanet({ orbitR: 118, radius: 14, color: '#3f8fd8', bandColor: '#7ec97e', speed: 0.0010,  phase: 2.2 });
   addPlanet({ orbitR: 185, radius: 10, color: '#d96f43', bandColor: '#f0b07a', speed: 0.00068, phase: 4.0 });
 
   // —— 地球的月球（同样受光照 + 自身轨道微光点）——
@@ -316,8 +321,10 @@ export function init(THREE, canvas, options = {}) {
   );
   moonMesh.position.set(26, 0, 0);
   moonPivot.add(moonMesh);
+  // 挂在地球的 holder 下（而非系统原点），这样月球会跟随地球一起公转；
+  // 坐标仍是相对太阳系的 (118,0,0)，即地球所在位置
   moonPivot.position.set(118, 0, 0);
-  system.add(moonPivot);
+  earthEntry.holder.add(moonPivot);
 
   // ================= 四、流星 =================
   const meteorGroup = new THREE.Group();
@@ -378,6 +385,10 @@ export function init(THREE, canvas, options = {}) {
     camH = window.innerHeight;
     camera.aspect = camW / camH;
     renderer.setSize(camW, camH, false);
+    // 竖屏窄视口时相机距离可达 ~1000+，星空盒（半边长 800）必须同步放大，
+    // 否则相机会飞出盒子外，BackSide 星空整片消失
+    const dist = idealCamDist();
+    starfield.scale.setScalar(Math.max(1, (dist * 1.35) / 800));
     repositionCamera(true);
     // 粒子随视口重新分布
     for (const layer of [layerFar, layerNear]) {
@@ -446,7 +457,7 @@ export function init(THREE, canvas, options = {}) {
       sunGlowOuter.scale.set(sunRadius * 11 * pulse2, sunRadius * 11 * pulse2, 1);
       const sunS = 1 + Math.sin(t * 2.3) * 0.02;
       sun.scale.set(sunS, sunS, sunS);
-      sunLight.intensity = 2.4 + Math.sin(t * 1.6) * 0.35;
+      sunLight.intensity = 180 + Math.sin(t * 1.6) * 30; // 与物理光照单位同量级的脉冲
     }
 
     // 相机：目标角 = 自动摆动 + 鼠标偏移，平滑追踪
@@ -514,6 +525,7 @@ export function init(THREE, canvas, options = {}) {
       }
     });
     renderer.dispose();
+    dispose = null; // 复位，保证 hasActive() 在销毁后返回 false
   };
   return dispose;
 }
