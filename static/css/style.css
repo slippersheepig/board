@@ -15,6 +15,11 @@
 
 html {
   height: 100%;
+  /* 只在 html 上限制水平溢出；不用 hidden 是因为 hidden 会创建滚动容器，
+     与 body 上的同类声明叠加会破坏滚轮滚动（滚动条在但滚不动）。
+     clip 不创建滚动容器，无此副作用；老浏览器回退到 hidden。 */
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 html, body {
@@ -33,7 +38,8 @@ html, body {
   background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
               linear-gradient(120deg, var(--bg1), var(--bg2));
   color: #e8f6ff;
-  overflow-x: hidden;
+  /* 注意：不要在这里给 body 加 overflow-x —— 双重声明会让 body 变成
+     独立滚动容器，导致「滚动条可见但滚轮无效」。水平溢出由 html 的 clip 负责 */
   overscroll-behavior-y: contain; /* 防橡皮筋越界露白，但保留页面内部滚动 */
 }
 
