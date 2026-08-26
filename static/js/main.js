@@ -84,6 +84,35 @@ if (document.readyState === 'complete') {
   }, { once: true });
 }
 
+// ================= 滚轮滚动兑底 =================
+// 背景：html/body 双重 overflow-x:hidden 曾导致「滚动条可见但滚轮无效」。
+// CSS 已修正；此处再加一层兑底：若默认滚动仍被环境吞掉，直接手动驱动文档滚动。
+(function setupWheelFallback() {
+  // 判断事件起点是否在嵌套滚动区内（如名言工具的 <pre>），是则交给原生处理
+  function findScrollable(el) {
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 1) return n;
+    }
+    return null;
+  }
+
+  window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) return;                 // 保留 Ctrl+滚轮 页面缩放
+    if (e.defaultPrevented) return;        // 已有其他逻辑接管
+    if (findScrollable(e.target)) return;  // 嵌套滚动区交给原生
+    const doc = document.scrollingElement || document.documentElement;
+    if (!doc || doc.scrollHeight <= window.innerHeight) return; // 页面不可滚
+
+    e.preventDefault();
+    let dy = e.deltaY, dx = e.deltaX;
+    if (e.deltaMode === 1) { dy *= 33; dx *= 33; }             // 行模式 → 像素
+    else if (e.deltaMode === 2) { dy *= window.innerHeight; dx *= window.innerWidth; } // 页模式
+    doc.scrollTop += dy;
+    doc.scrollLeft += dx;
+  }, { passive: false });
+})();
+
 // ================= 原有小工具逻辑（未改动） =================
 const toolArea = document.getElementById('toolArea');
 const buttons = document.querySelectorAll('#toolButtons button');
