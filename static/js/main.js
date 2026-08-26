@@ -27,12 +27,10 @@ function isLowPerformance() {
 const force2D = /[#?]bg2d/.test(location.hash) || /[#?]bg2d/.test(location.search);
 const want3D = !force2D && canUseWebGL() && !isLowPerformance();
 
-// 尝试多种来源加载 Three.js（本地优先，CDN 兜底）
 const THREE_SOURCES = [
-  '/static/js/vendor/three.module.js',
-  'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
-  'https://unpkg.com/three@0.160.0/build/three.module.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js'
+  'https://cdn.jsdelivr.net/npm/three/build/three.module.js',
+  'https://unpkg.com/three/build/three.module.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/three.js/three.module.min.js'
 ];
 
 async function loadThree() {
