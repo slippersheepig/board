@@ -74,8 +74,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const angle = Math.sin(phase) * 10; // ±10deg
     pendulumGroup.setAttribute('transform', `translate(0,40) rotate(${angle})`);
 
-    // 美化日期：用本地格式（例如 yyyy/mm/dd）
-    dateText.textContent = now.toLocaleDateString();
+    // 美化日期：用本地格式，且仅在日期变动时更新 DOM（避免 60fps 重复写入）
+    const dateStr = now.toLocaleDateString();
+    if (dateText && dateText.textContent !== dateStr) {
+      dateText.textContent = dateStr;
+    }
   }
 
   let last=0, active=true;
