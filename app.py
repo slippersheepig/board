@@ -38,7 +38,11 @@ def index():
 
 
 def _today_str() -> str:
-    now = datetime.now(ZoneInfo("Asia/Shanghai"))
+    try:
+        now = datetime.now(ZoneInfo("Asia/Shanghai"))
+    except Exception:
+        from datetime import timezone, timedelta
+        now = datetime.now(timezone(timedelta(hours=8)))
     return now.strftime("%Y-%m-%d")
 
 
@@ -184,6 +188,12 @@ def _call_quote_api(today: str) -> tuple[str, bool, dict]:
             "stage": "request",
             "error": "url_error",
             "detail": str(err.reason),
+        }
+    except Exception as err:
+        return DAILY_QUOTE_FALLBACK, True, {
+            "stage": "request",
+            "error": "unexpected_error",
+            "detail": str(err),
         }
 
 
