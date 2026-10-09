@@ -1,18 +1,62 @@
-export async function init(){
+export async function init() {
   const el = document.createElement('div');
+  el.className = 'pom-widget';
   el.innerHTML = `
-    <div>
-      <div id="pomDisplay" style="font-size:18px">未运行</div>
-      <div style="margin-top:8px"><button id="pomStart">开始 25 分</button> <button id="pomStop">停止</button></div>
+    <div id="pomDisplay" class="pom-display">25:00</div>
+    <div class="pom-btns">
+      <button id="pomStart">开始</button>
+      <button id="pomStop">暂停</button>
+      <button id="pomReset">重置</button>
     </div>
   `;
-  let timer=null, remaining=0;
-  function formatT(sec){ const m = Math.floor(sec/60).toString().padStart(2,'0'); const s = (sec%60).toString().padStart(2,'0'); return `${m}:${s}`; }
-  el.querySelector('#pomStart').onclick = ()=>{
-    if(timer) return;
-    remaining=25*60; el.querySelector('#pomDisplay').textContent=formatT(remaining);
-    timer = setInterval(()=>{ remaining--; el.querySelector('#pomDisplay').textContent=formatT(remaining); if(remaining<=0){ clearInterval(timer); timer=null; el.querySelector('#pomDisplay').textContent='完成！'; } },1000);
+
+  let timer = null;
+  const DEFAULT_SECONDS = 25 * 60;
+  let remaining = DEFAULT_SECONDS;
+
+  const displayEl = el.querySelector('#pomDisplay');
+  const startBtn = el.querySelector('#pomStart');
+  const stopBtn = el.querySelector('#pomStop');
+  const resetBtn = el.querySelector('#pomReset');
+
+  function formatT(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function tick() {
+    remaining--;
+    displayEl.textContent = formatT(remaining);
+    if (remaining <= 0) {
+      clearInterval(timer);
+      timer = null;
+      displayEl.textContent = '完成！';
+    }
+  }
+
+  startBtn.onclick = () => {
+    if (timer) return;
+    if (remaining <= 0) remaining = DEFAULT_SECONDS;
+    displayEl.textContent = formatT(remaining);
+    timer = setInterval(tick, 1000);
   };
-  el.querySelector('#pomStop').onclick = ()=>{ if(timer){ clearInterval(timer); timer=null; el.querySelector('#pomDisplay').textContent='已停止'; } };
+
+  stopBtn.onclick = () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  resetBtn.onclick = () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    remaining = DEFAULT_SECONDS;
+    displayEl.textContent = formatT(remaining);
+  };
+
   return el;
 }
