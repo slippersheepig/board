@@ -3,7 +3,7 @@
   --bg2: #060b13;
   --card: rgba(10, 18, 30, 0.45);
   --accent: #00f0ff;
-  --muted: rgba(255,255,255,0.55);
+  --muted: rgba(225, 240, 255, 0.65);
   --neon: rgba(0, 240, 255, 0.2);
   --glass: rgba(16, 24, 40, 0.6);
   --btn-glow: 0 4px 15px rgba(0, 240, 255, 0.15);
@@ -11,13 +11,13 @@
   --roman-color: #ffdca7;
 }
 
-* { box-sizing: border-box }
+* {
+  box-sizing: border-box;
+}
 
 html {
   height: 100%;
-  /* 只在 html 上限制水平溢出；不用 hidden 是因为 hidden 会创建滚动容器，
-     与 body 上的同类声明叠加会破坏滚轮滚动（滚动条在但滚不动）。
-     clip 不创建滚动容器，无此副作用；老浏览器回退到 hidden。 */
+  /* 只在 html 上限制水平溢出；clip 不创建滚动容器，老浏览器回退到 hidden */
   overflow-x: hidden;
   overflow-x: clip;
 }
@@ -25,48 +25,27 @@ html {
 html, body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  min-height: 100dvh; /* 现代浏览器：动态视口高度，比 100vh 更贴合 Safari 实际可视区域 */
+  min-height: 100dvh; /* 现代浏览器：动态视口高度，贴合移动端可视区域 */
   margin: 0;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* 关键修复：background-color 必须和渐变分开写。
-     之前 `background: 渐变...` 简写会把上面的 background-color 重置为 transparent，
-     导致 Safari 在「橡皮筋回弹区」和「刘海/Home 指示条安全区」找不到纯色兜底，
-     只能显示 WebView 默认的白色——也就是页面上下的白条。 */
+  /* background-color 与渐变分开写，防止 Safari 橡皮筋回弹露白 */
   background-color: #02050a;
-  background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
-              linear-gradient(120deg, var(--bg1), var(--bg2));
+  background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6, 14, 20, 0.8), transparent),
+                    linear-gradient(120deg, var(--bg1), var(--bg2));
   color: #e8f6ff;
-  /* 注意：不要在这里给 body 加 overflow-x —— 双重声明会让 body 变成
-     独立滚动容器，导致「滚动条可见但滚轮无效」。水平溢出由 html 的 clip 负责 */
-  overscroll-behavior-y: contain; /* 防橡皮筋越界露白，但保留页面内部滚动 */
-}
-
-body {
-  min-height: 100%;
-}
-
-@media (prefers-color-scheme: light) {
-  html, body {
-    background-color: #f5f7fa;
-    background-image: radial-gradient(1200px 800px at 10% 10%, rgba(245,247,250,0.8), transparent),
-                linear-gradient(120deg, #f5f7fa, #dfe9f3);
-    color: #111;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  html, body {
-    background-color: #02050a;
-    background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6,14,20,0.8), transparent),
-                linear-gradient(120deg, var(--bg1), var(--bg2));
-    color: #e8f6ff;
-  }
+  overscroll-behavior-y: contain; /* 防橡皮筋越界露白，保留页面内部滚动 */
 }
 
 /* background canvas */
-#bgCanvas { position: fixed; inset: 0; z-index: 0; touch-action: pan-y; pointer-events: none }
+#bgCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  touch-action: pan-y;
+  pointer-events: none;
+}
 
 /* header merged and centered */
 #topbar {
@@ -79,40 +58,83 @@ body {
   align-items: center;
   text-align: center;
 }
-#topTitle { display: flex; flex-direction: column; align-items: center }
-.title { font-size: 22px; font-weight: 700; letter-spacing: 0.6px }
-.subtitle { color: var(--muted); font-size: 13px; margin-top: 4px }
+
+#topTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
 
 /* main centered area */
-#container{position:relative; z-index:2; max-width:1100px; margin:18px auto; display:flex; gap:20px; padding:0 20px calc(20px + env(safe-area-inset-bottom)); align-items:flex-start; justify-content:center}
-#centerColumn{width:100%; display:flex; flex-direction:column; gap:18px; align-items:center}
+#container {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 18px auto;
+  display: flex;
+  gap: 20px;
+  padding: 0 20px calc(20px + env(safe-area-inset-bottom));
+  align-items: flex-start;
+  justify-content: center;
+}
+
+#centerColumn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
 
 /* cards */
 .card {
-  background: rgba(4, 10, 18, 0.15); 
-  backdrop-filter: blur(0px); 
-  -webkit-backdrop-filter: blur(0px);
-  padding: 14px; 
-  border-radius: 16px; 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.05); 
+  background: rgba(4, 10, 18, 0.15);
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.05);
   border: 1px solid rgba(0, 240, 255, 0.25);
-  width: 100%; 
+  width: 100%;
   max-width: 980px;
   will-change: transform;
-  transform: translateZ(0); 
+  transform: translateZ(0);
 }
 
-/* clock */
+/* clock card */
 #clockCard {
   background: transparent;
+  background-color: rgba(4, 10, 18, 0.08); /* 半透明，背景天体透过可见 */
   border-color: rgba(0, 240, 255, 0.35);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.3), inset 0 0 35px rgba(0, 240, 255, 0.08);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  background-color: rgba(4, 10, 18, 0.08); /* 更透明，背景行星透过可见 */
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), inset 0 0 35px rgba(0, 240, 255, 0.08);
 }
-.clockSVG{width:520px; height:520px; display:block; margin:6px auto; background:transparent}
-#dateText{margin-top:10px; text-align:center; font-weight:700; letter-spacing:0.8px}
+
+.clockSVG {
+  width: min(520px, 92vw);
+  height: min(520px, 92vw);
+  max-width: 100%;
+  display: block;
+  margin: 6px auto;
+  background: transparent;
+}
+
+#dateText {
+  margin-top: 10px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
 .dateText.neon {
   font-size: 18px;
   background: linear-gradient(90deg, #00f0ff, #7000ff, #00f0ff);
@@ -127,92 +149,140 @@ body {
   to { background-position: 200% center; }
 }
 
-/* tools title centered */
-.toolsTitle{ text-align:center; margin:0 0 8px 0; color:var(--accent); font-size:18px }
+/* tools title */
+.toolsTitle {
+  text-align: center;
+  margin: 0 0 10px 0;
+  color: var(--accent);
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
 
-/* tool buttons */
-.toolButtons{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; justify-content:center}
+/* tool buttons toolbar */
+.toolButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
 .toolButtons button {
-  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); 
-  color: #eaf9ff; 
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  color: #eaf9ff;
   border: 1px solid rgba(0, 240, 255, 0.15);
-  padding: 10px 14px; 
-  border-radius: 12px; 
-  cursor: pointer; 
-  box-shadow: var(--btn-glow); 
-  font-weight: 700; 
+  padding: 9px 15px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: var(--btn-glow);
+  font-weight: 700;
   font-size: 14px;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   will-change: transform, box-shadow;
 }
 
 .toolButtons button:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: var(--btn-glow-strong); 
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--btn-glow-strong);
   border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255,255,255,0.02));
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 255, 255, 0.02));
 }
 
-/* tool area: center loaded content */
-.toolArea{margin-top:12px; min-height:160px; color:var(--muted); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
+/* active tool button state */
+.toolButtons button.active {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.22), rgba(0, 240, 255, 0.06));
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
+  color: #ffffff;
+}
 
-.toolArea button, .toolArea input[type="button"], .toolArea .btn {
-  background: linear-gradient(90deg, rgba(102,217,255,0.12), rgba(170,230,255,0.06));
-  border: 1px solid rgba(160,230,255,0.08);
+/* tool area */
+.toolArea {
+  margin-top: 14px;
+  min-height: 160px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.toolArea .hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.toolArea button,
+.toolArea input[type="button"],
+.toolArea .btn {
+  background: linear-gradient(90deg, rgba(102, 217, 255, 0.14), rgba(170, 230, 255, 0.07));
+  border: 1px solid rgba(160, 230, 255, 0.2);
   color: #eaf9ff;
-  padding: 8px 12px;
+  padding: 8px 16px;
   border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(10,40,60,0.25);
+  box-shadow: 0 4px 15px rgba(10, 40, 60, 0.25);
   cursor: pointer;
-  font-weight:700;
-  transition: transform .12s, box-shadow .12s, filter .12s;
-}
-.toolArea button:hover, .toolArea .btn:hover {
-  transform: translateY(-4px);
-  filter: drop-shadow(0 6px 24px rgba(102,217,255,0.12));
-  box-shadow: 0 12px 36px rgba(10,40,60,0.35);
+  font-weight: 700;
+  font-size: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-.toolArea input, .toolArea select, .toolArea textarea {
-  padding:8px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,0.04);
-  background:rgba(0,0,0,0.28);
-  color:#eef;
+.toolArea button:hover,
+.toolArea .btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.25);
 }
 
-.toolArea .neon-btn, .toolArea .neon-small {
+.toolArea button:active,
+.toolArea .btn:active {
+  transform: translateY(0);
+}
+
+.toolArea input,
+.toolArea select,
+.toolArea textarea {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: rgba(0, 0, 0, 0.36);
+  color: #eef;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toolArea input:focus,
+.toolArea select:focus,
+.toolArea textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+}
+
+.toolArea .neon-btn,
+.toolArea .neon-small {
   color: #eaf9ff;
 }
 
 .toolArea .row {
-  display:flex;
-  gap:8px;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
 }
 
-/* responsive adjustments */
-@media (max-width:1100px){
-  .clockSVG{width:420px; height:420px}
-  .card{max-width:720px}
-}
-@media (max-width:640px){
-  .clockSVG{width:320px; height:320px}
-  .card{max-width:100%}
-  .toolButtons button{flex:1 1 45%}
-  .toolArea{min-height:140px}
-}
-
+/* Calculator */
 .calc-widget {
   width: min(360px, 96%);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px;
+  padding: 14px;
   border-radius: 12px;
   background: rgba(5, 13, 22, 0.55);
-  border: 1px solid rgba(160, 230, 255, 0.12);
+  border: 1px solid rgba(160, 230, 255, 0.15);
 }
 
 .calc-screen-wrap {
@@ -223,11 +293,12 @@ body {
   width: 100%;
   font-size: 22px;
   text-align: right;
-  padding: 10px;
+  padding: 10px 12px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.36);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #eaf9ff;
+  font-family: monospace;
 }
 
 .calc-out {
@@ -235,6 +306,7 @@ body {
   text-align: right;
   color: var(--muted);
   min-height: 20px;
+  font-size: 13px;
 }
 
 .calc-pad {
@@ -252,47 +324,59 @@ body {
   appearance: none;
 }
 
-.calc-key-op { color: #9ee6ff; }
-.calc-key-fn { color: #ffdca7; }
-.calc-key-eq {
-  background: linear-gradient(90deg, rgba(102,217,255,0.35), rgba(170,230,255,0.12));
+.calc-key-op {
+  color: #9ee6ff;
 }
 
+.calc-key-fn {
+  color: #ffdca7;
+}
+
+.calc-key-eq {
+  background: linear-gradient(90deg, rgba(102, 217, 255, 0.35), rgba(170, 230, 255, 0.12)) !important;
+  color: #ffffff !important;
+}
 
 .toolArea .calc-key {
-  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
-  border: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: var(--btn-glow);
+  padding: 8px 4px;
 }
 
 .toolArea .calc-key:hover {
+  transform: none; /* 保持九宫格稳定，不向上跳动 */
   box-shadow: var(--btn-glow-strong);
-  background: linear-gradient(135deg, rgba(102,217,255,0.06), rgba(255,255,255,0.02));
+  border-color: rgba(0, 240, 255, 0.4);
+  background: linear-gradient(135deg, rgba(102, 217, 255, 0.1), rgba(255, 255, 255, 0.03));
 }
 
-.toolArea .calc-key-eq {
-  background: linear-gradient(90deg, rgba(102,217,255,0.35), rgba(170,230,255,0.12));
-}
+/* Daily Quote */
 .quote-widget {
   width: min(520px, 96%);
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  align-items: center; /* 居中子元素，防止按钮被强制拉满全宽 */
 }
 
 .quote-title {
   color: var(--accent);
   font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
 }
 
 .quote-text {
+  width: 100%;
   font-size: 18px;
   line-height: 1.7;
-  padding: 10px;
+  padding: 12px 16px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #eaf9ff;
 }
 
 .quote-meta {
@@ -303,7 +387,7 @@ body {
 .quote-debug {
   width: 100%;
   text-align: left;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.28);
   padding: 8px 10px;
@@ -325,4 +409,242 @@ body {
   font-size: 12px;
   line-height: 1.45;
   color: #d8f3ff;
+}
+
+/* 按钮尺寸收敛：解决按钮过宽问题 */
+.quote-widget .quote-refresh {
+  align-self: center;
+  min-width: 120px;
+  padding: 8px 22px;
+}
+
+/* Password Generator Widget */
+.pw-widget {
+  width: min(380px, 96%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pw-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pw-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #eaf9ff;
+}
+
+.pw-len-input {
+  width: 64px !important;
+  text-align: center;
+  font-weight: 700;
+}
+
+.pw-out {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px dashed rgba(0, 240, 255, 0.25);
+  border-radius: 10px;
+  font-family: monospace;
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: #9ee6ff;
+  word-break: break-all;
+  user-select: all;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.pw-out:hover {
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* Pomodoro & Stopwatch Widgets */
+.pom-widget,
+.sw-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pom-display,
+.sw-display {
+  font-size: 36px;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+  margin: 4px 0;
+}
+
+.pom-btns,
+.sw-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.sw-laps {
+  width: min(280px, 90vw);
+  margin-top: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 8px;
+}
+
+.sw-lap-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-family: monospace;
+  font-size: 13px;
+  color: #cfeeff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sw-lap-item:last-child {
+  border-bottom: none;
+}
+
+/* World Clocks Widget */
+.wc-widget {
+  width: min(340px, 96%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 240, 255, 0.12);
+  transition: border-color 0.15s ease;
+}
+
+.wc-row:hover {
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.wc-label {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.wc-time {
+  font-family: monospace;
+  font-size: 14px;
+  color: #eaf9ff;
+}
+
+/* Calendar Widget */
+.cal-widget {
+  width: min(340px, 96%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+  font-size: 15px;
+  color: #eaf9ff;
+}
+
+.cal-btn {
+  padding: 4px 12px !important;
+  min-width: 36px;
+}
+
+.cal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+
+.cal-table th {
+  color: var(--accent);
+  padding: 6px 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cal-table td {
+  padding: 7px 4px;
+  text-align: center;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #d8f3ff;
+}
+
+.cal-table td.cal-today {
+  background: rgba(0, 240, 255, 0.18);
+  border-color: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+  .clockSVG {
+    width: min(420px, 90vw);
+    height: min(420px, 90vw);
+  }
+  .card {
+    max-width: 720px;
+  }
+}
+
+@media (max-width: 640px) {
+  .clockSVG {
+    width: min(320px, 88vw);
+    height: min(320px, 88vw);
+  }
+  .card {
+    max-width: 100%;
+    padding: 12px;
+  }
+  /* 移动端紧凑自适应排布：避免单个按钮横跨整行或过度撑大 */
+  .toolButtons {
+    gap: 8px;
+  }
+  .toolButtons button {
+    flex: 0 0 auto;
+    min-width: 76px;
+    padding: 8px 13px;
+    font-size: 13px;
+  }
+  .toolArea {
+    min-height: 140px;
+  }
 }
