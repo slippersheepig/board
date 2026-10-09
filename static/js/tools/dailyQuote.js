@@ -1,4 +1,4 @@
-export async function init(){
+export async function init() {
   const el = document.createElement('div');
   el.className = 'quote-widget';
   el.innerHTML = `
@@ -16,9 +16,12 @@ export async function init(){
   const metaEl = el.querySelector('#quoteMeta');
   const debugEl = el.querySelector('#quoteDebug');
   const debugContentEl = el.querySelector('#quoteDebugContent');
+  const refreshBtn = el.querySelector('#quoteRefresh');
 
-  function renderDebug(debug){
-    if(!debug || Object.keys(debug).length === 0){
+  let loading = false;
+
+  function renderDebug(debug) {
+    if (!debug || Object.keys(debug).length === 0) {
       debugEl.hidden = true;
       debugContentEl.textContent = '';
       return;
@@ -27,30 +30,35 @@ export async function init(){
     debugContentEl.textContent = JSON.stringify(debug, null, 2);
   }
 
-  async function loadQuote(){
+  async function loadQuote() {
+    if (loading) return;
+    loading = true;
+    if (refreshBtn) refreshBtn.disabled = true;
+
     textEl.textContent = '加载中...';
     metaEl.textContent = '';
     renderDebug(null);
+
     const controller = new AbortController();
-    const timer = setTimeout(()=> controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), 5000);
     try {
       const resp = await fetch('/api/daily-quote', {
         method: 'GET',
         signal: controller.signal,
         cache: 'no-store',
       });
-      const data = await resp.json().catch(()=> ({}));
-      if(!resp.ok){
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
         const error = new Error(`http-${resp.status}`);
         error.payload = data;
         throw error;
       }
       textEl.textContent = data.quote || '你瞅啥';
-      if(data.isFallback){
+      if (data.isFallback) {
         const reason = data.debug?.error ? `，原因：${data.debug.error}` : '';
         metaEl.textContent = data.date ? `日期：${data.date}（已启用兜底文案${reason}）` : `已启用兜底文案${reason}`;
         renderDebug(data.debug);
-      }else{
+      } else {
         metaEl.textContent = data.date ? `日期：${data.date}` : '';
         renderDebug(null);
       }
@@ -63,10 +71,12 @@ export async function init(){
       });
     } finally {
       clearTimeout(timer);
+      loading = false;
+      if (refreshBtn) refreshBtn.disabled = false;
     }
   }
 
-  el.querySelector('#quoteRefresh').addEventListener('click', loadQuote);
+  refreshBtn.addEventListener('click', loadQuote);
   await loadQuote();
   return el;
 }
