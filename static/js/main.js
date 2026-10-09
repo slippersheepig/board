@@ -129,12 +129,20 @@ function invokeLifecycle(name, hookName) {
   }
 }
 
+function updateActiveButton(name) {
+  buttons.forEach((b) => {
+    b.classList.toggle('active', b.dataset.tool === name);
+  });
+}
+
 async function loadTool(name) {
   if (!toolArea) return;
 
   if (activeToolName && activeToolName !== name) {
     invokeLifecycle(activeToolName, 'onHide');
   }
+
+  updateActiveButton(name);
 
   if (loaded.has(name)) {
     toolArea.innerHTML = '';
