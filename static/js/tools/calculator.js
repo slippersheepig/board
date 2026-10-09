@@ -152,7 +152,6 @@ export async function init(){
   const expr = container.querySelector('#calcExpr');
   const out = container.querySelector('#calcOut');
 
-
   function normalizeExpr(value){
     return (value || '').replace(/[^0-9+\-*/().]/g, '');
   }
