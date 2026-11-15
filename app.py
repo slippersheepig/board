@@ -28,6 +28,7 @@ NTP_TIMEOUT_SEC = float(os.environ.get("NTP_TIMEOUT_SEC", "2.5"))
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 30
+RATE_LIMIT_MAX_KEYS = 10_000
 RATE_LIMITER = defaultdict(deque)
 RATE_LIMIT_LOCK = threading.Lock()
 
@@ -206,6 +207,15 @@ def _check_rate_limit(client_ip: str) -> bool:
         if len(q) >= RATE_LIMIT_MAX:
             return False
         q.append(now)
+        # 安全阀：X-Forwarded-For 可被伪造，防止伪造大量假 IP 导致字典无限膨胀
+        if len(RATE_LIMITER) > RATE_LIMIT_MAX_KEYS:
+            stale = [
+                ip
+                for ip, dq in RATE_LIMITER.items()
+                if not dq or now - dq[-1] > RATE_LIMIT_WINDOW
+            ]
+            for ip in stale:
+                del RATE_LIMITER[ip]
         return True
 
 
