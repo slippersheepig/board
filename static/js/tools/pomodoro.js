@@ -10,43 +10,53 @@ export async function init() {
     </div>
   `;
 
-  let timer = null;
   const DEFAULT_SECONDS = 25 * 60;
-  let remaining = DEFAULT_SECONDS;
+  let remainingMs = DEFAULT_SECONDS * 1000; // 暂停时保存的剩余毫秒
+  let deadline = 0;                         // 计时中对应的到期时间戳；0 表示未在计时
+  let timer = null;
 
   const displayEl = el.querySelector('#pomDisplay');
   const startBtn = el.querySelector('#pomStart');
   const stopBtn = el.querySelector('#pomStop');
   const resetBtn = el.querySelector('#pomReset');
 
-  function formatT(sec) {
-    const m = Math.floor(sec / 60).toString().padStart(2, '0');
-    const s = (sec % 60).toString().padStart(2, '0');
+  function formatT(totalSec) {
+    const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+    const s = (totalSec % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   }
 
-  function tick() {
-    remaining--;
-    displayEl.textContent = formatT(remaining);
-    if (remaining <= 0) {
-      clearInterval(timer);
-      timer = null;
-      displayEl.textContent = '完成！';
+  // 基于到期时间戳而非每秒自减：后台标签页 setInterval 被限流时也不会走慢
+  function render() {
+    if (deadline) {
+      const leftMs = deadline - Date.now();
+      if (leftMs <= 0) {
+        clearInterval(timer);
+        timer = null;
+        deadline = 0;
+        remainingMs = 0;
+        displayEl.textContent = '完成！';
+        return;
+      }
+      remainingMs = leftMs;
     }
+    displayEl.textContent = formatT(Math.ceil(remainingMs / 1000));
   }
 
   startBtn.onclick = () => {
     if (timer) return;
-    if (remaining <= 0) remaining = DEFAULT_SECONDS;
-    displayEl.textContent = formatT(remaining);
-    timer = setInterval(tick, 1000);
+    if (remainingMs <= 0) remainingMs = DEFAULT_SECONDS * 1000;
+    deadline = Date.now() + remainingMs;
+    timer = setInterval(render, 250);
+    render();
   };
 
   stopBtn.onclick = () => {
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
-    }
+    if (!timer) return;
+    clearInterval(timer);
+    timer = null;
+    render(); // 先结算暂停时刻的剩余时间
+    deadline = 0;
   };
 
   resetBtn.onclick = () => {
@@ -54,8 +64,24 @@ export async function init() {
       clearInterval(timer);
       timer = null;
     }
-    remaining = DEFAULT_SECONDS;
-    displayEl.textContent = formatT(remaining);
+    deadline = 0;
+    remainingMs = DEFAULT_SECONDS * 1000;
+    displayEl.textContent = formatT(DEFAULT_SECONDS);
+  };
+
+  // 与 worldClocks 一致：工具隐藏时停止轮询（墙钟时间仍在流逝），显示时恢复
+  el.onToolHide = () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  el.onToolShow = () => {
+    if (deadline && !timer) {
+      timer = setInterval(render, 250);
+    }
+    render();
   };
 
   return el;
