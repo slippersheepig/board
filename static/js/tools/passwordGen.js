@@ -15,6 +15,18 @@ export async function init() {
 
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
 
+  // 密码必须用加密安全随机源；配合拒绝采样消除取模偏差，保证每个字符等概率
+  function randIndex(max) {
+    const limit = Math.floor(0x100000000 / max) * max;
+    const buf = new Uint32Array(1);
+    let value;
+    do {
+      crypto.getRandomValues(buf);
+      value = buf[0];
+    } while (value >= limit);
+    return value % max;
+  }
+
   function generate() {
     const rawLen = parseInt(lenInput.value, 10);
     const len = Math.max(4, Math.min(64, Number.isFinite(rawLen) ? rawLen : 12));
@@ -22,7 +34,7 @@ export async function init() {
 
     let pwd = '';
     for (let i = 0; i < len; i++) {
-      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+      pwd += chars.charAt(randIndex(chars.length));
     }
     outDiv.textContent = pwd;
   }
