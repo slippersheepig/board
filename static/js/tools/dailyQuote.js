@@ -3,7 +3,7 @@ export async function init() {
   el.className = 'quote-widget';
   el.innerHTML = `
     <div class="quote-title">每日名言</div>
-    <div id="quoteText" class="quote-text">加载中...</div>
+    <div id="quoteText" class="quote-text">加载中…</div>
     <div id="quoteMeta" class="quote-meta"></div>
     <details id="quoteDebug" class="quote-debug" hidden>
       <summary>查看异常详情</summary>
@@ -35,12 +35,14 @@ export async function init() {
     loading = true;
     if (refreshBtn) refreshBtn.disabled = true;
 
-    textEl.textContent = '加载中...';
+    textEl.textContent = '加载中…';
     metaEl.textContent = '';
     renderDebug(null);
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    // 后端调用上游 API 的超时为 8s，前端需留足余量，否则上游慢响应时
+    // 服务端已拿到名言并缓存，前端却提前放弃而显示兜底文案
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
       const resp = await fetch('/api/daily-quote', {
         method: 'GET',
