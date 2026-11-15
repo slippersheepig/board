@@ -1,14 +1,10 @@
 :root {
   --bg1: #02050a;
   --bg2: #060b13;
-  --card: rgba(10, 18, 30, 0.45);
   --accent: #00f0ff;
   --muted: rgba(225, 240, 255, 0.65);
-  --neon: rgba(0, 240, 255, 0.2);
-  --glass: rgba(16, 24, 40, 0.6);
   --btn-glow: 0 4px 15px rgba(0, 240, 255, 0.15);
   --btn-glow-strong: 0 8px 25px rgba(0, 240, 255, 0.35);
-  --roman-color: #ffdca7;
 }
 
 * {
@@ -259,11 +255,6 @@ html, body {
 .toolArea textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
-}
-
-.toolArea .neon-btn,
-.toolArea .neon-small {
-  color: #eaf9ff;
 }
 
 .toolArea .row {
