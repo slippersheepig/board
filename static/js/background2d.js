@@ -22,7 +22,7 @@ export function init(canvas) {
   const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 
   const visualCache = {
-    nebula1: null, nebula2: null,
+    nebula1: null,
     sun: null, earth: null, moon: null
   };
 
@@ -30,6 +30,7 @@ export function init(canvas) {
   let orbitCache = null;
   let active = true;
   let lastTs = 0;
+  let rafId = 0;
 
   function resizeBG() {
     const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
@@ -38,6 +39,8 @@ export function init(canvas) {
     bgCanvas.style.width = window.innerWidth + 'px';
     bgCanvas.style.height = window.innerHeight + 'px';
     bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 渐变半径依赖视口尺寸，resize 后作废，下一帧按新尺寸重建
+    visualCache.nebula1 = null;
     initOrbitBackground();
   }
 
@@ -128,7 +131,13 @@ export function init(canvas) {
     bgCtx.fillStyle = 'rgba(4, 10, 18, 0.62)';
     const width = bgCtx.measureText(text).width + 14;
     bgCtx.beginPath();
-    bgCtx.roundRect(x - width / 2, y - 10, width, 20, 10);
+    if (typeof bgCtx.roundRect === 'function') {
+      bgCtx.roundRect(x - width / 2, y - 10, width, 20, 10);
+    } else {
+      // 旧浏览器（Safari 15 / Chrome<99 等）无 roundRect，退化为直角标签，
+      // 避免异常冒泡打断 rAF 循环导致整个降级背景冻结
+      bgCtx.rect(x - width / 2, y - 10, width, 20);
+    }
     bgCtx.fill();
     bgCtx.fillStyle = 'rgba(226, 247, 255, 0.86)';
     bgCtx.fillText(text, x, y + 0.5);
@@ -236,17 +245,27 @@ export function init(canvas) {
   }
 
   function bgLoop(ts) {
-    if (!active) return;
+    if (!active) {
+      // 隐藏期间循环可能被终止；恢复可见时由 onVisibility 重新启动
+      rafId = 0;
+      return;
+    }
     if (!lastTs || ts - lastTs >= FRAME_MIN) {
       drawBackground(ts || performance.now());
       lastTs = ts;
     }
-    requestAnimationFrame(bgLoop);
+    rafId = requestAnimationFrame(bgLoop);
   }
 
   function onVisibility() {
     active = (document.visibilityState === 'visible');
-    if (active) lastTs = 0;
+    if (active) {
+      lastTs = 0;
+      // 循环可能在隐藏期间死掉，此处负责拉起；
+      // 先取消残留的待执行帧，避免与重启的循环形成双循环
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(bgLoop);
+    }
   }
 
   function onResize() { resizeBG(); }
@@ -257,10 +276,11 @@ export function init(canvas) {
   window.addEventListener('resize', initStars);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVisibility);
-  requestAnimationFrame(bgLoop);
+  rafId = requestAnimationFrame(bgLoop);
 
   return function stop() {
     active = false;
+    if (rafId) cancelAnimationFrame(rafId);
     window.removeEventListener('resize', onResize);
     window.removeEventListener('resize', initStars);
     if (window.visualViewport) window.visualViewport.removeEventListener('resize', onResize);
