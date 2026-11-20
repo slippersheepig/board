@@ -1,6 +1,7 @@
 let cachedOffsetMs = 0;
 let syncLoaded = false;
 let cachedTimezone = 'Etc/UTC';
+let pendingPromise = null;
 
 function getDeviceTimezone() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -12,23 +13,40 @@ export async function loadTimeOffset() {
   if (syncLoaded && timezone === cachedTimezone) {
     return cachedOffsetMs;
   }
+  if (pendingPromise && timezone === cachedTimezone) {
+    return pendingPromise;
+  }
 
   cachedTimezone = timezone;
 
-  try {
-    const params = new URLSearchParams({ tz: timezone });
-    const resp = await fetch(`/api/time-sync?${params.toString()}`, { cache: 'no-store' });
-    if (!resp.ok) {
-      throw new Error(`time-sync-http-${resp.status}`);
+  pendingPromise = (async () => {
+    try {
+      const params = new URLSearchParams({ tz: timezone });
+      const reqStart = Date.now();
+      const resp = await fetch(`/api/time-sync?${params.toString()}`, { cache: 'no-store' });
+      const reqEnd = Date.now();
+      if (!resp.ok) {
+        throw new Error(`time-sync-http-${resp.status}`);
+      }
+      const data = await resp.json();
+      if (!data.isFallback && Number.isFinite(data.serverTimeMs)) {
+        const processingMs = Number.isFinite(data.processingMs) ? Math.max(0, data.processingMs) : 0;
+        const networkRttMs = Math.max(0, (reqEnd - reqStart) - processingMs);
+        const clientAtResponse = reqEnd - networkRttMs / 2;
+        cachedOffsetMs = Math.round(data.serverTimeMs - clientAtResponse);
+      } else {
+        cachedOffsetMs = 0;
+      }
+    } catch {
+      cachedOffsetMs = 0;
+    } finally {
+      syncLoaded = true;
+      pendingPromise = null;
     }
-    const data = await resp.json();
-    cachedOffsetMs = Number.isFinite(data.offsetMs) ? data.offsetMs : 0;
-  } catch (_err) {
-    cachedOffsetMs = 0;
-  }
+    return cachedOffsetMs;
+  })();
 
-  syncLoaded = true;
-  return cachedOffsetMs;
+  return pendingPromise;
 }
 
 export function getSyncedNow() {
