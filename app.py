@@ -4,10 +4,10 @@ import socket
 import threading
 import time
 from collections import defaultdict, deque
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from urllib.error import URLError, HTTPError
+from datetime import datetime, timedelta, timezone
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 from flask import Flask, jsonify, render_template, request
 
@@ -22,9 +22,9 @@ QUOTE_CACHE = {
 }
 QUOTE_LOCK = threading.Lock()
 
-NTP_SERVER = os.environ.get("NTP_SERVER", "ntp.aliyun.com")
-NTP_PORT = int(os.environ.get("NTP_PORT", "123"))
-NTP_TIMEOUT_SEC = float(os.environ.get("NTP_TIMEOUT_SEC", "2.5"))
+NTP_SERVER = os.environ.get("NTP_SERVER") or "ntp.aliyun.com"
+NTP_PORT = int(os.environ.get("NTP_PORT") or "123")
+NTP_TIMEOUT_SEC = float(os.environ.get("NTP_TIMEOUT_SEC") or "2.5")
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 30
@@ -42,7 +42,6 @@ def _today_str() -> str:
     try:
         now = datetime.now(ZoneInfo("Asia/Shanghai"))
     except Exception:
-        from datetime import timezone, timedelta
         now = datetime.now(timezone(timedelta(hours=8)))
     return now.strftime("%Y-%m-%d")
 
@@ -148,10 +147,11 @@ def _call_quote_api(today: str) -> tuple[str, bool, dict]:
         },
     )
 
+    status_code = None
     try:
         with urlopen(req, timeout=8) as resp:
             status_code = getattr(resp, "status", None)
-            raw_text = resp.read().decode("utf-8", errors="replace")
+            raw_text = resp.read(1024 * 1024).decode("utf-8", errors="replace")
             data = json.loads(raw_text)
             quote = _extract_quote(data)
             is_fallback = quote == DAILY_QUOTE_FALLBACK
@@ -165,7 +165,7 @@ def _call_quote_api(today: str) -> tuple[str, bool, dict]:
                 debug["error"] = "empty_quote"
             return quote, is_fallback, debug
     except HTTPError as err:
-        err_body = err.read().decode("utf-8", errors="replace")
+        err_body = err.read(65536).decode("utf-8", errors="replace")
         return DAILY_QUOTE_FALLBACK, True, {
             "stage": "request",
             "error": "http_error",
@@ -176,7 +176,7 @@ def _call_quote_api(today: str) -> tuple[str, bool, dict]:
         return DAILY_QUOTE_FALLBACK, True, {
             "stage": "response",
             "error": "invalid_json",
-            "status": 200,
+            "status": status_code or 200,
             "detail": str(err),
         }
     except TimeoutError:
@@ -185,6 +185,11 @@ def _call_quote_api(today: str) -> tuple[str, bool, dict]:
             "error": "timeout",
         }
     except URLError as err:
+        if isinstance(err.reason, TimeoutError):
+            return DAILY_QUOTE_FALLBACK, True, {
+                "stage": "request",
+                "error": "timeout",
+            }
         return DAILY_QUOTE_FALLBACK, True, {
             "stage": "request",
             "error": "url_error",
@@ -216,12 +221,19 @@ def _check_rate_limit(client_ip: str) -> bool:
             ]
             for ip in stale:
                 del RATE_LIMITER[ip]
+            # 若同一窗口内仍有超额伪造 IP，按最早写入顺序淘汰以强制封顶
+            while len(RATE_LIMITER) > RATE_LIMIT_MAX_KEYS:
+                oldest_ip = next(iter(RATE_LIMITER))
+                if oldest_ip == client_ip:
+                    break
+                del RATE_LIMITER[oldest_ip]
         return True
 
 
 @app.route("/api/daily-quote", methods=["GET"])
 def daily_quote():
-    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+    forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    client_ip = forwarded or request.remote_addr or "unknown"
     if not _check_rate_limit(client_ip):
         return jsonify({
             "quote": DAILY_QUOTE_FALLBACK,
@@ -247,58 +259,72 @@ def daily_quote():
 
         quote = QUOTE_CACHE["quote"] or DAILY_QUOTE_FALLBACK
         is_fallback = QUOTE_CACHE["is_fallback"]
-        debug = QUOTE_CACHE.get("debug") or {}
+        debug = (QUOTE_CACHE.get("debug") or {}) if is_fallback else {}
 
     return jsonify({"quote": quote, "date": today, "isFallback": is_fallback, "debug": debug})
 
 
 @app.route("/api/time-sync", methods=["GET"])
 def time_sync():
-    timezone = (request.args.get("tz") or "Etc/UTC").strip()
+    req_start = time.monotonic()
+    tz_name = (request.args.get("tz") or "Etc/UTC").strip()
     try:
-        ZoneInfo(timezone)
+        ZoneInfo(tz_name)
     except Exception:
-        return jsonify({"error": "invalid_timezone", "timezone": timezone}), 400
+        return jsonify({"error": "invalid_timezone", "timezone": tz_name}), 400
 
     # NTP 授时规则：
     # - 使用 UDP 123 端口发送 48 字节请求包，首字节设置为 0x1B（LI=0,VN=3,Mode=3 client）
     # - 服务端回包中的 transmit timestamp（字节 40-47）是自 1900-01-01 起的时间戳
-    # - 需减去 NTP 与 Unix 纪元偏移量 2208988800 秒
-    local_utc_ms = int(time.time() * 1000)
+    # - 需减去 NTP 与 Unix 纪元偏移量 2208988800 秒，并以收发中点估算往返延迟
     ntp_epoch_offset = 2208988800
     try:
+        ntp_addr = socket.gethostbyname(NTP_SERVER)
         packet = b"\x1b" + 47 * b"\0"
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.settimeout(NTP_TIMEOUT_SEC)
-            s.sendto(packet, (NTP_SERVER, NTP_PORT))
+            t0 = time.time()
+            s.sendto(packet, (ntp_addr, NTP_PORT))
             data, _ = s.recvfrom(48)
+            t1 = time.time()
 
-        if len(data) < 48:
+        if len(data) < 48 or data[1] == 0:
             raise ValueError("invalid_ntp_packet")
 
         seconds = int.from_bytes(data[40:44], "big")
         fraction = int.from_bytes(data[44:48], "big")
+        if seconds < ntp_epoch_offset:
+            raise ValueError("invalid_ntp_timestamp")
+
         unix_seconds = seconds - ntp_epoch_offset
         remote_utc_ms = int(unix_seconds * 1000 + (fraction * 1000 / 2**32))
+        local_mid_ms = int(((t0 + t1) / 2) * 1000)
+        offset_ms = remote_utc_ms - local_mid_ms
+        server_now_ms = int(time.time() * 1000) + offset_ms
+        processing_ms = int((time.monotonic() - req_start) * 1000)
 
         return jsonify(
             {
-                "serverTimeMs": remote_utc_ms,
-                "localTimeMs": local_utc_ms,
-                "offsetMs": remote_utc_ms - local_utc_ms,
-                "timezone": timezone,
+                "serverTimeMs": server_now_ms,
+                "localTimeMs": local_mid_ms,
+                "offsetMs": offset_ms,
+                "processingMs": processing_ms,
+                "timezone": tz_name,
                 "source": f"ntp://{NTP_SERVER}:{NTP_PORT}",
                 "isFallback": False,
             }
         )
     except (socket.timeout, OSError, ValueError):
         # 公共授时源不可用时自动回退到本地时间，保证页面仍可运行。
+        local_utc_ms = int(time.time() * 1000)
+        processing_ms = int((time.monotonic() - req_start) * 1000)
         return jsonify(
             {
                 "serverTimeMs": local_utc_ms,
                 "localTimeMs": local_utc_ms,
                 "offsetMs": 0,
-                "timezone": timezone,
+                "processingMs": processing_ms,
+                "timezone": tz_name,
                 "source": "local-fallback",
                 "isFallback": True,
             }
