@@ -4,9 +4,9 @@ export async function init() {
   el.innerHTML = `
     <div class="pw-controls">
       <label>长度 <input id="pwLen" class="pw-len-input" type="number" value="12" min="4" max="64" /></label>
-      <button id="pwGen">生成</button>
+      <button type="button" id="pwGen">生成</button>
     </div>
-    <div id="pwOut" class="pw-out" title="点击复制密码">点击「生成」获取密码</div>
+    <div id="pwOut" class="pw-out" role="button" tabindex="0" title="点击复制密码">点击「生成」获取密码</div>
   `;
 
   const lenInput = el.querySelector('#pwLen');
@@ -14,20 +14,26 @@ export async function init() {
   const outDiv = el.querySelector('#pwOut');
 
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
+  const randBuf = new Uint32Array(1);
+  let currentPassword = '';
+  let feedbackTimer = null;
 
   // 密码必须用加密安全随机源；配合拒绝采样消除取模偏差，保证每个字符等概率
   function randIndex(max) {
     const limit = Math.floor(0x100000000 / max) * max;
-    const buf = new Uint32Array(1);
     let value;
     do {
-      crypto.getRandomValues(buf);
-      value = buf[0];
+      crypto.getRandomValues(randBuf);
+      value = randBuf[0];
     } while (value >= limit);
     return value % max;
   }
 
   function generate() {
+    if (feedbackTimer) {
+      clearTimeout(feedbackTimer);
+      feedbackTimer = null;
+    }
     const rawLen = parseInt(lenInput.value, 10);
     const len = Math.max(4, Math.min(64, Number.isFinite(rawLen) ? rawLen : 12));
     lenInput.value = len;
@@ -36,28 +42,37 @@ export async function init() {
     for (let i = 0; i < len; i++) {
       pwd += chars.charAt(randIndex(chars.length));
     }
-    outDiv.textContent = pwd;
+    currentPassword = pwd;
+    outDiv.textContent = currentPassword;
   }
 
-  genBtn.onclick = generate;
-
-  outDiv.onclick = async () => {
-    const text = outDiv.textContent;
-    if (!text || text.includes('点击')) return;
+  async function copyPassword() {
+    if (!currentPassword) return;
     try {
-      await navigator.clipboard.writeText(text);
-      const prev = outDiv.textContent;
+      await navigator.clipboard.writeText(currentPassword);
+      if (feedbackTimer) clearTimeout(feedbackTimer);
       outDiv.textContent = '已复制到剪贴板！';
-      setTimeout(() => {
-        if (outDiv.textContent === '已复制到剪贴板！') {
-          outDiv.textContent = prev;
-        }
+      feedbackTimer = setTimeout(() => {
+        outDiv.textContent = currentPassword;
+        feedbackTimer = null;
       }, 1200);
     } catch {
       // 剪贴板权限不可用时静默降级（用户仍可直接全选文本）
     }
-  };
+  }
 
-  generate(); // 初始生成一个密码，避免留白
+  genBtn.addEventListener('click', generate);
+  lenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') generate();
+  });
+  outDiv.addEventListener('click', copyPassword);
+  outDiv.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      copyPassword();
+    }
+  });
+
+  generate();
   return el;
 }
