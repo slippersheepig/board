@@ -15,15 +15,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Install gh
+      - name: Ensure gh CLI
         run: |
-          latest_version=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-          download_url="https://github.com/cli/cli/releases/download/v${latest_version}/gh_${latest_version}_linux_amd64.tar.gz"
-          wget $download_url
-          tar -xvf gh_${latest_version}_linux_amd64.tar.gz
-          sudo mv gh_${latest_version}_linux_amd64/bin/gh /usr/local/bin
-          rm gh_${latest_version}_linux_amd64.tar.gz
-          rm -rf gh_${latest_version}_linux_amd64
+          if ! command -v gh >/dev/null 2>&1; then
+            latest_version=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+            download_url="https://github.com/cli/cli/releases/download/v${latest_version}/gh_${latest_version}_linux_amd64.tar.gz"
+            wget "$download_url"
+            tar -xvf "gh_${latest_version}_linux_amd64.tar.gz"
+            sudo mv "gh_${latest_version}_linux_amd64/bin/gh" /usr/local/bin
+            rm -rf "gh_${latest_version}_linux_amd64.tar.gz" "gh_${latest_version}_linux_amd64"
+          fi
 
       - name: Configure Git
         run: |
@@ -34,7 +35,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          # 获取 PR 号码
           PR_NUMBER=$(jq -r .pull_request.number < "$GITHUB_EVENT_PATH")
-          # 合并 PR
-          gh pr merge $PR_NUMBER --auto --merge --delete-branch
+          gh pr merge "$PR_NUMBER" --auto --merge --delete-branch
