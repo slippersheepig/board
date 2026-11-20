@@ -1,25 +1,28 @@
+import { getSyncedNow } from '../timeSync.js';
+
 export async function init() {
   const el = document.createElement('div');
   el.className = 'cal-widget';
-  el.innerHTML = '<div id="calWrap"></div>';
-  const wrap = el.querySelector('#calWrap');
 
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth();
-  const currentDate = today.getDate();
+  let viewYear = 0;
+  let viewMonth = 0;
 
-  function renderCalendar(date = new Date()) {
-    const y = date.getFullYear();
-    const m = date.getMonth();
-    const firstDay = new Date(y, m, 1).getDay();
-    const totalDays = new Date(y, m + 1, 0).getDate();
+  function renderCalendar(date = getSyncedNow()) {
+    const today = getSyncedNow();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentDate = today.getDate();
+
+    viewYear = date.getFullYear();
+    viewMonth = date.getMonth();
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const totalDays = new Date(viewYear, viewMonth + 1, 0).getDate();
 
     let html = `
       <div class="cal-header">
-        <button id="prev" class="cal-btn" aria-label="上一月">&lt;</button>
-        <div><strong>${y} 年 ${m + 1} 月</strong></div>
-        <button id="next" class="cal-btn" aria-label="下一月">&gt;</button>
+        <button type="button" id="prev" class="cal-btn" aria-label="上一月">&lt;</button>
+        <div><strong>${viewYear} 年 ${viewMonth + 1} 月</strong></div>
+        <button type="button" id="next" class="cal-btn" aria-label="下一月">&gt;</button>
       </div>
       <table class="cal-table">
         <thead>
@@ -33,12 +36,10 @@ export async function init() {
       if (day > totalDays) break;
       html += '<tr>';
       for (let c = 0; c < 7; c++) {
-        if (r === 0 && c < firstDay) {
-          html += '<td></td>';
-        } else if (day > totalDays) {
+        if ((r === 0 && c < firstDay) || day > totalDays) {
           html += '<td></td>';
         } else {
-          const isToday = (y === currentYear && m === currentMonth && day === currentDate);
+          const isToday = viewYear === currentYear && viewMonth === currentMonth && day === currentDate;
           const cls = isToday ? ' class="cal-today"' : '';
           html += `<td${cls}>${day}</td>`;
           day++;
@@ -48,11 +49,15 @@ export async function init() {
     }
 
     html += '</tbody></table>';
-    wrap.innerHTML = html;
+    el.innerHTML = html;
 
-    wrap.querySelector('#prev').onclick = () => renderCalendar(new Date(y, m - 1, 1));
-    wrap.querySelector('#next').onclick = () => renderCalendar(new Date(y, m + 1, 1));
+    el.querySelector('#prev').addEventListener('click', () => renderCalendar(new Date(viewYear, viewMonth - 1, 1)));
+    el.querySelector('#next').addEventListener('click', () => renderCalendar(new Date(viewYear, viewMonth + 1, 1)));
   }
+
+  el.onToolShow = () => {
+    renderCalendar(new Date(viewYear, viewMonth, 1));
+  };
 
   renderCalendar();
   return el;
