@@ -4,11 +4,11 @@ export async function init() {
   el.innerHTML = `
     <div id="swDisplay" class="sw-display">00:00.000</div>
     <div class="sw-btns">
-      <button id="swStart">开始</button>
-      <button id="swStop">暂停</button>
-      <button id="swReset">重置</button>
+      <button type="button" id="swStart">开始</button>
+      <button type="button" id="swStop">暂停</button>
+      <button type="button" id="swReset">重置</button>
     </div>
-    <div id="swLaps" class="sw-laps" style="display:none;"></div>
+    <div id="swLaps" class="sw-laps" hidden></div>
   `;
 
   let running = false;
@@ -30,59 +30,70 @@ export async function init() {
     return `${mm}:${ss}.${msPart}`;
   }
 
+  function stopLoop() {
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+  }
+
   function tick() {
-    const now = performance.now();
-    const total = elapsed + (now - startT);
+    if (!running) {
+      raf = 0;
+      return;
+    }
+    const total = elapsed + (performance.now() - startT);
     disp.textContent = fmt(total);
     raf = requestAnimationFrame(tick);
   }
 
-  startBtn.onclick = () => {
+  startBtn.addEventListener('click', () => {
     if (!running) {
       running = true;
       startT = performance.now();
+      stopLoop();
       raf = requestAnimationFrame(tick);
       startBtn.textContent = '计次';
     } else {
-      const now = performance.now();
-      const total = elapsed + (now - startT);
+      const total = elapsed + (performance.now() - startT);
       lapCount++;
-      laps.style.display = 'block';
+      laps.hidden = false;
       const item = document.createElement('div');
       item.className = 'sw-lap-item';
-      item.innerHTML = `<span>#${lapCount}</span><span>${fmt(total)}</span>`;
+      const idxSpan = document.createElement('span');
+      idxSpan.textContent = `#${lapCount}`;
+      const timeSpan = document.createElement('span');
+      timeSpan.textContent = fmt(total);
+      item.append(idxSpan, timeSpan);
       laps.prepend(item);
     }
-  };
+  });
 
-  stopBtn.onclick = () => {
-    if (running) {
-      running = false;
-      cancelAnimationFrame(raf);
-      elapsed += performance.now() - startT;
-      startBtn.textContent = '继续';
-    }
-  };
-
-  resetBtn.onclick = () => {
+  stopBtn.addEventListener('click', () => {
+    if (!running) return;
     running = false;
-    cancelAnimationFrame(raf);
+    stopLoop();
+    elapsed += performance.now() - startT;
+    disp.textContent = fmt(elapsed);
+    startBtn.textContent = '继续';
+  });
+
+  resetBtn.addEventListener('click', () => {
+    running = false;
+    stopLoop();
     elapsed = 0;
     lapCount = 0;
     disp.textContent = '00:00.000';
-    laps.innerHTML = '';
-    laps.style.display = 'none';
+    laps.replaceChildren();
+    laps.hidden = true;
     startBtn.textContent = '开始';
-  };
+  });
 
-  el.onToolHide = () => {
-    if (running) {
-      cancelAnimationFrame(raf);
-    }
-  };
+  el.onToolHide = stopLoop;
 
   el.onToolShow = () => {
     if (running) {
+      stopLoop();
       raf = requestAnimationFrame(tick);
     }
   };
