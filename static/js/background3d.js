@@ -1,22 +1,12 @@
-// background3d.js — Three.js 3D 背景（方案 C：全量 3D 化）
-// 升级要点：
-//  1. 正交相机 → 透视相机（PerspectiveCamera），恢复真实「近大远小」纵深
-//  2. MeshBasicMaterial 平涂 → MeshStandardMaterial + 点光源/环境光，球体有明暗过渡与高光
-//  3. 太阳：自发光 + 双层光晕脉冲呼吸；行星：程序化表面条纹贴图 + 自转
-//  4. 轨道光点流：每条轨道上一圈加色粒子流，比行星转得更快，制造能量感
-//  5. 相机自动缓慢摆动 + 鼠标视差（yaw/pitch 真旋转，不再只是平移几像素）
-//  6. 星场贴图缓慢漂移；前景粒子分近/远两层，近快远慢，增强空间感
-//  7. 保留全部资源优化：DPR 封顶、抗锯齿关、页面隐藏暂停、prefers-reduced-motion 降级
-//
-// 对外接口不变：
-//   init(THREE, canvas, options) -> dispose | null
-//   hasActive() -> boolean
+// Three.js 3D 星空与太阳系轨道背景
+// 导出接口：init(THREE, canvas, options) -> dispose | null, hasActive() -> boolean
 
 let dispose = null;
 
 export function init(THREE, canvas, options = {}) {
   if (!canvas || !THREE) return null;
   if (typeof THREE.WebGLRenderer === 'undefined') return null;
+  if (dispose) dispose();
 
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -72,22 +62,24 @@ export function init(THREE, canvas, options = {}) {
     g.fillStyle = '#02050a';
     g.fillRect(0, 0, c.width, c.height);
 
-    // 微弱星云渐变
-    const neb = g.createRadialGradient(180, 180, 40, 180, 180, 520);
+    // 微弱星云渐变：外半径收敛在画布内部，确保四边淡出为纯黑避免天空盒接缝
+    const neb = g.createRadialGradient(380, 380, 30, 380, 380, 360);
     neb.addColorStop(0, 'rgba(70, 30, 140, 0.22)');
     neb.addColorStop(0.5, 'rgba(40, 20, 90, 0.09)');
     neb.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = neb; g.fillRect(0, 0, c.width, c.height);
-    const neb2 = g.createRadialGradient(760, 700, 60, 760, 700, 480);
+    g.fillStyle = neb;
+    g.fillRect(0, 0, c.width, c.height);
+    const neb2 = g.createRadialGradient(660, 640, 40, 660, 640, 340);
     neb2.addColorStop(0, 'rgba(20, 60, 130, 0.18)');
     neb2.addColorStop(0.6, 'rgba(10, 30, 80, 0.06)');
     neb2.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = neb2; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = neb2;
+    g.fillRect(0, 0, c.width, c.height);
 
-    // 星星
+    // 星星（留出边距避免落在天空盒接缝上被截断）
     for (let i = 0; i < starCount; i++) {
-      const x = Math.random() * c.width;
-      const y = Math.random() * c.height;
+      const x = 4 + Math.random() * (c.width - 8);
+      const y = 4 + Math.random() * (c.height - 8);
       const r = Math.random() * 1.4 + 0.3;
       const a = 0.25 + Math.random() * 0.75;
       g.fillStyle = `rgba(255,255,255,${a})`;
@@ -236,7 +228,7 @@ export function init(THREE, canvas, options = {}) {
   const planets = [];
   function circlePoints(r, seg) {
     const pts = [];
-    for (let i = 0; i <= seg; i++) {
+    for (let i = 0; i < seg; i++) {
       const a = (i / seg) * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
     }
@@ -247,12 +239,11 @@ export function init(THREE, canvas, options = {}) {
     const pivot = new THREE.Group();
     pivot.rotation.y = phase || 0; // 初始相位：避免行星开局排在同一条直线上
 
-    // 轨道线
+    // 轨道线（点集已位于 XZ 轨道平面，与行星公转及光点流共面）
     const ring = new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints(circlePoints(orbitR, 128)),
       new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.32 })
     );
-    ring.rotation.x = Math.PI / 2;
     pivot.add(ring);
 
     // 轨道光点流：一圈小粒子沿轨道快速流动（独立组，速度是公转的 ~4 倍）
@@ -303,17 +294,16 @@ export function init(THREE, canvas, options = {}) {
     return entry;
   }
 
-  addPlanet({ orbitR: 62,  radius: 7,  color: '#c8a06a', bandColor: '#8f6f42', speed: 0.0016,  phase: 0.6 });
-  const earthEntry = addPlanet({ orbitR: 118, radius: 14, color: '#3f8fd8', bandColor: '#7ec97e', speed: 0.0010,  phase: 2.2 });
+  addPlanet({ orbitR: 62, radius: 7, color: '#c8a06a', bandColor: '#8f6f42', speed: 0.0016, phase: 0.6 });
+  const earthEntry = addPlanet({ orbitR: 118, radius: 14, color: '#3f8fd8', bandColor: '#7ec97e', speed: 0.0010, phase: 2.2 });
   addPlanet({ orbitR: 185, radius: 10, color: '#d96f43', bandColor: '#f0b07a', speed: 0.00068, phase: 4.0 });
 
-  // —— 地球的月球（同样受光照 + 自身轨道微光点）——
+  // —— 地球的月球 ——
   const moonPivot = new THREE.Group();
   const moonRing = new THREE.LineLoop(
     new THREE.BufferGeometry().setFromPoints(circlePoints(26, 48)),
     new THREE.LineBasicMaterial({ color: 0x9fb4c8, transparent: true, opacity: 0.28 })
   );
-  moonRing.rotation.x = Math.PI / 2;
   moonPivot.add(moonRing);
   const moonMesh = new THREE.Mesh(
     new THREE.SphereGeometry(4.5, 16, 12),
@@ -321,8 +311,7 @@ export function init(THREE, canvas, options = {}) {
   );
   moonMesh.position.set(26, 0, 0);
   moonPivot.add(moonMesh);
-  // 挂在地球的 holder 下（而非系统原点），这样月球会跟随地球一起公转；
-  // 坐标仍是相对太阳系的 (118,0,0)，即地球所在位置
+  // 挂在地球的 holder 下（而非系统原点），这样月球会跟随地球一起公转
   moonPivot.position.set(118, 0, 0);
   earthEntry.holder.add(moonPivot);
 
@@ -334,8 +323,12 @@ export function init(THREE, canvas, options = {}) {
   function spawnMeteor() {
     if (meteorGroup.children.length >= MAX_METEORS) return;
     const len = 50 + Math.random() * 80;
+    const dirX = Math.random() < 0.5 ? -1 : 1;
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+    geo.setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array([0, 0, 0, -dirX * len, len * 0.35, 0]), 3)
+    );
     const mat = new THREE.LineBasicMaterial({
       color: 0xcfe9ff,
       transparent: true,
@@ -351,23 +344,26 @@ export function init(THREE, canvas, options = {}) {
     );
     meteorGroup.add(line);
     meteors.push({
-      line, len,
-      speedX: 6 + Math.random() * 8,
-      speedY: -2 - Math.random() * 3,
+      line,
+      speedX: 180 + Math.random() * 140,
+      speedY: -(55 + Math.random() * 65),
       life: 1,
-      dirX: Math.random() < 0.5 ? -1 : 1
+      dirX
     });
   }
 
   // ================= 渲染循环 =================
   const clock = new THREE.Clock();
   let rafId = null;
-  let running = true;
+  let running = document.visibilityState === 'visible';
+  let camDist = idealCamDist();
 
   // 相机控制：鼠标 → 目标 yaw/pitch（真旋转），加上自动缓慢摆动
-  let mouseX = 0, mouseY = 0;          // -1..1
-  let yaw = 0, pitch = 0;              // 当前角度
-  const MOUSE_YAW_MAX = 0.38;          // 弧度，明显但不出戏
+  let mouseX = 0;
+  let mouseY = 0;
+  let yaw = 0;
+  let pitch = 0;
+  const MOUSE_YAW_MAX = 0.38;
   const MOUSE_PITCH_MAX = 0.22;
   const AUTO_YAW_AMP = reducedMotion ? 0 : 0.14;
   const AUTO_PITCH_AMP = reducedMotion ? 0 : 0.06;
@@ -376,9 +372,24 @@ export function init(THREE, canvas, options = {}) {
     mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
     mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
   }
-  function onPointerLeave() { mouseX = 0; mouseY = 0; }
+  function onPointerLeave() {
+    mouseX = 0;
+    mouseY = 0;
+  }
   window.addEventListener('pointermove', onPointerMove, { passive: true });
   document.addEventListener('pointerleave', onPointerLeave);
+
+  function repositionCamera(immediate) {
+    // 由 yaw/pitch 计算相机在以原点为球心的球面位置
+    const cy = Math.cos(pitch);
+    camera.position.set(
+      Math.sin(yaw) * cy * camDist,
+      Math.sin(pitch) * camDist,
+      Math.cos(yaw) * cy * camDist
+    );
+    camera.lookAt(0, 0, 0);
+    if (immediate) camera.updateProjectionMatrix();
+  }
 
   function resize() {
     camW = window.innerWidth;
@@ -387,8 +398,8 @@ export function init(THREE, canvas, options = {}) {
     renderer.setSize(camW, camH, false);
     // 竖屏窄视口时相机距离可达 ~1000+，星空盒（半边长 800）必须同步放大，
     // 否则相机会飞出盒子外，BackSide 星空整片消失
-    const dist = idealCamDist();
-    starfield.scale.setScalar(Math.max(1, (dist * 1.35) / 800));
+    camDist = idealCamDist();
+    starfield.scale.setScalar(Math.max(1, (camDist * 1.35) / 800));
     repositionCamera(true);
     // 粒子随视口重新分布
     for (const layer of [layerFar, layerNear]) {
@@ -398,18 +409,6 @@ export function init(THREE, canvas, options = {}) {
       }
       layer.geo.attributes.position.needsUpdate = true;
     }
-  }
-  function repositionCamera(immediate) {
-    // 由 yaw/pitch 计算相机在以原点为球心的球面位置
-    const dist = idealCamDist();
-    const cy = Math.cos(pitch);
-    camera.position.set(
-      Math.sin(yaw) * cy * dist,
-      Math.sin(pitch) * dist,
-      Math.cos(yaw) * cy * dist
-    );
-    camera.lookAt(0, 0, 0);
-    if (immediate) camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -457,14 +456,15 @@ export function init(THREE, canvas, options = {}) {
       sunGlowOuter.scale.set(sunRadius * 11 * pulse2, sunRadius * 11 * pulse2, 1);
       const sunS = 1 + Math.sin(t * 2.3) * 0.02;
       sun.scale.set(sunS, sunS, sunS);
-      sunLight.intensity = 180 + Math.sin(t * 1.6) * 30; // 与物理光照单位同量级的脉冲
+      sunLight.intensity = 180 + Math.sin(t * 1.6) * 30;
     }
 
-    // 相机：目标角 = 自动摆动 + 鼠标偏移，平滑追踪
+    // 相机：目标角 = 自动摆动 + 鼠标偏移，与刷新率无关的平滑追踪
     const targetYaw = Math.sin(t * 0.13) * AUTO_YAW_AMP + mouseX * MOUSE_YAW_MAX;
     const targetPitch = 0.16 + Math.cos(t * 0.09) * AUTO_PITCH_AMP + mouseY * MOUSE_PITCH_MAX;
-    yaw += (targetYaw - yaw) * 0.04;
-    pitch += (targetPitch - pitch) * 0.04;
+    const lerp = 1 - Math.exp(-2.4 * dt);
+    yaw += (targetYaw - yaw) * lerp;
+    pitch += (targetPitch - pitch) * lerp;
     repositionCamera(false);
 
     // 流星
@@ -479,11 +479,8 @@ export function init(THREE, canvas, options = {}) {
       const m = meteors[i];
       m.line.position.x += m.speedX * m.dirX * dt;
       m.line.position.y += m.speedY * dt;
-      const pos = m.line.geometry.attributes.position.array;
-      pos[0] = 0; pos[1] = 0; pos[2] = 0;
-      pos[3] = -m.dirX * m.len; pos[4] = m.len * 0.35; pos[5] = 0;
-      m.line.geometry.attributes.position.needsUpdate = true;
-      const opacity = m.line.material.opacity = Math.max(0, m.life);
+      const opacity = Math.max(0, m.life);
+      m.line.material.opacity = opacity;
       m.life -= dt * 1.4;
       if (opacity <= 0) {
         meteorGroup.remove(m.line);
@@ -498,15 +495,26 @@ export function init(THREE, canvas, options = {}) {
 
   function onVisibility() {
     if (document.visibilityState === 'visible') {
-      if (!running) { running = true; clock.getDelta(); rafId = requestAnimationFrame(animate); }
+      if (!running) {
+        running = true;
+        clock.getDelta();
+        rafId = requestAnimationFrame(animate);
+      }
     } else {
       running = false;
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
     }
   }
   document.addEventListener('visibilitychange', onVisibility);
 
-  animate();
+  if (running) {
+    animate();
+  } else {
+    renderer.render(scene, camera);
+  }
 
   // —— 销毁函数 ——
   dispose = function stop() {
@@ -517,10 +525,14 @@ export function init(THREE, canvas, options = {}) {
     window.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerleave', onPointerLeave);
     document.removeEventListener('visibilitychange', onVisibility);
+    const disposedTextures = new Set();
     scene.traverse((obj) => {
       if (obj.geometry) obj.geometry.dispose();
       if (obj.material) {
-        if (obj.material.map) obj.material.map.dispose();
+        if (obj.material.map && !disposedTextures.has(obj.material.map)) {
+          disposedTextures.add(obj.material.map);
+          obj.material.map.dispose();
+        }
         obj.material.dispose();
       }
     });
