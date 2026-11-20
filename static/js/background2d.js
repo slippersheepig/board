@@ -1,6 +1,4 @@
-// background2d.js — 原始 Canvas 2D 背景，提取成可复用模块
-// 当 WebGL / Three.js 不可用或设备性能不足时作为降级方案使用。
-// 逻辑与原始 main.js 中的背景渲染保持一致。
+// Canvas 2D 星空与日地月轨道背景（WebGL 不可用或低配设备时的降级实现）
 
 const TWO_PI = Math.PI * 2;
 
@@ -23,26 +21,18 @@ export function init(canvas) {
 
   const visualCache = {
     nebula1: null,
-    sun: null, earth: null, moon: null
+    sun: null,
+    earth: null,
+    moon: null,
   };
 
   let stars = [];
   let orbitCache = null;
-  let active = true;
+  let lastW = 0;
+  let lastH = 0;
+  let active = document.visibilityState === 'visible';
   let lastTs = 0;
   let rafId = 0;
-
-  function resizeBG() {
-    const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
-    bgCanvas.width = Math.floor(window.innerWidth * dpr);
-    bgCanvas.height = Math.floor(window.innerHeight * dpr);
-    bgCanvas.style.width = window.innerWidth + 'px';
-    bgCanvas.style.height = window.innerHeight + 'px';
-    bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // 渐变半径依赖视口尺寸，resize 后作废，下一帧按新尺寸重建
-    visualCache.nebula1 = null;
-    initOrbitBackground();
-  }
 
   function initStars() {
     stars = [];
@@ -59,13 +49,14 @@ export function init(canvas) {
         phase: Math.random() * TWO_PI,
         moveAmp: baseAmp,
         moveFreq: 0.6 + Math.random() * 1.8,
-        movePhase: Math.random() * TWO_PI
+        movePhase: Math.random() * TWO_PI,
       });
     }
   }
 
   function initOrbitBackground() {
-    const w = window.innerWidth, h = window.innerHeight;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
     const size = Math.max(w, h);
     orbitCache = {
       sunX: w * 0.5,
@@ -73,8 +64,25 @@ export function init(canvas) {
       earthOrbitR: Math.max(120, Math.min(size * 0.30, Math.min(w, h) * 0.40)),
       moonOrbitR: Math.max(28, Math.min(size * 0.05, 52)),
       tilt: -0.18,
-      scaleY: 0.62
+      scaleY: 0.62,
     };
+  }
+
+  function resizeBG() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (w === lastW && h === lastH) return;
+    lastW = w;
+    lastH = h;
+
+    const dpr = Math.min(MAX_DPR, window.devicePixelRatio || 1);
+    bgCanvas.width = Math.floor(w * dpr);
+    bgCanvas.height = Math.floor(h * dpr);
+    bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 渐变半径依赖视口尺寸，resize 后作废并在下一帧按新尺寸重建
+    visualCache.nebula1 = null;
+    initOrbitBackground();
+    initStars();
   }
 
   function drawNebula(nowMs) {
@@ -144,12 +152,14 @@ export function init(canvas) {
   }
 
   function createPlanetTexture(r, fillStops, glowColor) {
-    const canvas = document.createElement('canvas');
+    const offscreen = document.createElement('canvas');
     const size = r * 4;
-    canvas.width = size; canvas.height = size;
-    const ctx = canvas.getContext('2d');
+    offscreen.width = size;
+    offscreen.height = size;
+    const ctx = offscreen.getContext('2d');
 
-    const cx = size / 2, cy = size / 2;
+    const cx = size / 2;
+    const cy = size / 2;
     const glow = ctx.createRadialGradient(cx, cy, r * 0.8, cx, cy, r * 2);
     glow.addColorStop(0, glowColor);
     glow.addColorStop(1, 'rgba(0,0,0,0)');
@@ -157,16 +167,16 @@ export function init(canvas) {
     ctx.fillRect(0, 0, size, size);
 
     const planet = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.15, cx, cy, r * 1.5);
-    fillStops.forEach(stop => planet.addColorStop(stop[0], stop[1]));
+    fillStops.forEach((stop) => planet.addColorStop(stop[0], stop[1]));
     ctx.fillStyle = planet;
     ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r, 0, TWO_PI);
     ctx.fill();
 
     ctx.strokeStyle = 'rgba(255,255,255,0.28)';
     ctx.lineWidth = 1;
     ctx.stroke();
-    return canvas;
+    return offscreen;
   }
 
   function drawPlanet({ x, y, r, fill, glow, label, id }) {
@@ -183,8 +193,8 @@ export function init(canvas) {
     if (!cfg) return;
     const realDays = (Date.now() - J2000_MS) / 86400000;
     const simTime = nowMs / 1000;
-    const earthAngle = (realDays / 365.256 * TWO_PI) + (simTime / ORBIT_SECONDS_PER_YEAR * TWO_PI) - 1.35;
-    const moonAngle = (realDays / 27.321661 * TWO_PI) + (simTime / MOON_SECONDS_PER_MONTH * TWO_PI) + 0.8;
+    const earthAngle = (realDays / 365.256) * TWO_PI + (simTime / ORBIT_SECONDS_PER_YEAR) * TWO_PI - 1.35;
+    const moonAngle = (realDays / 27.321661) * TWO_PI + (simTime / MOON_SECONDS_PER_MONTH) * TWO_PI + 0.8;
     const earth = projectOrbit(cfg.sunX, cfg.sunY, cfg.earthOrbitR, earthAngle, cfg.scaleY, cfg.tilt);
     const moon = projectOrbit(earth.x, earth.y, cfg.moonOrbitR, moonAngle, 0.72, cfg.tilt + 0.55);
 
@@ -200,33 +210,43 @@ export function init(canvas) {
 
     drawPlanet({
       id: 'sun',
-      x: cfg.sunX, y: cfg.sunY, r: 31,
+      x: cfg.sunX,
+      y: cfg.sunY,
+      r: 31,
       fill: [[0, '#fff8d0'], [0.45, '#ffd166'], [1, '#f97316']],
-      glow: 'rgba(255, 174, 66, 0.68)', label: '太阳'
+      glow: 'rgba(255, 174, 66, 0.68)',
+      label: '太阳',
     });
     drawPlanet({
       id: 'earth',
-      x: earth.x, y: earth.y, r: 15,
+      x: earth.x,
+      y: earth.y,
+      r: 15,
       fill: [[0, '#d9fbff'], [0.42, '#2dd4bf'], [0.72, '#2563eb'], [1, '#0f172a']],
-      glow: 'rgba(59, 130, 246, 0.60)', label: '地球'
+      glow: 'rgba(59, 130, 246, 0.60)',
+      label: '地球',
     });
     drawPlanet({
       id: 'moon',
-      x: moon.x, y: moon.y, r: 6,
+      x: moon.x,
+      y: moon.y,
+      r: 6,
       fill: [[0, '#ffffff'], [0.48, '#cbd5e1'], [1, '#64748b']],
-      glow: 'rgba(226, 232, 240, 0.46)', label: '月球'
+      glow: 'rgba(226, 232, 240, 0.46)',
+      label: '月球',
     });
   }
 
   function drawBackground(nowMs) {
-    const w = window.innerWidth, h = window.innerHeight;
-    bgCtx.clearRect(0, 0, w, h);
-
-    bgCtx.fillStyle = 'rgba(0,0,0,0.20)';
-    bgCtx.fillRect(0, 0, w, h);
-    drawNebula(nowMs);
-
+    const w = window.innerWidth;
+    const h = window.innerHeight;
     const now = nowMs || performance.now();
+
+    bgCtx.fillStyle = '#02050a';
+    bgCtx.fillRect(0, 0, w, h);
+    drawNebula(now);
+
+    bgCtx.fillStyle = '#ffffff';
     for (const s of stars) {
       s.phase += 0.00055 * s.twinkleSpeed;
       const drift = Math.sin(now * STAR_MOVE_SPEED * s.moveFreq + s.movePhase);
@@ -236,7 +256,6 @@ export function init(canvas) {
       const alpha = s.baseAlpha * (0.65 + 0.35 * Math.sin(s.phase + now * 0.00035 * s.twinkleSpeed));
       bgCtx.globalAlpha = Math.max(0.05, Math.min(1, alpha));
       bgCtx.beginPath();
-      bgCtx.fillStyle = '#ffffff';
       bgCtx.arc(x, y, s.r, 0, TWO_PI);
       bgCtx.fill();
     }
@@ -246,7 +265,6 @@ export function init(canvas) {
 
   function bgLoop(ts) {
     if (!active) {
-      // 隐藏期间循环可能被终止；恢复可见时由 onVisibility 重新启动
       rafId = 0;
       return;
     }
@@ -258,32 +276,30 @@ export function init(canvas) {
   }
 
   function onVisibility() {
-    active = (document.visibilityState === 'visible');
+    active = document.visibilityState === 'visible';
     if (active) {
       lastTs = 0;
-      // 循环可能在隐藏期间死掉，此处负责拉起；
-      // 先取消残留的待执行帧，避免与重启的循环形成双循环
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(bgLoop);
+    } else if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
     }
   }
 
-  function onResize() { resizeBG(); }
-
-  initStars();
   resizeBG();
-  window.addEventListener('resize', onResize);
-  window.addEventListener('resize', initStars);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
+  window.addEventListener('resize', resizeBG);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resizeBG);
   document.addEventListener('visibilitychange', onVisibility);
-  rafId = requestAnimationFrame(bgLoop);
+  if (active) {
+    rafId = requestAnimationFrame(bgLoop);
+  }
 
   return function stop() {
     active = false;
     if (rafId) cancelAnimationFrame(rafId);
-    window.removeEventListener('resize', onResize);
-    window.removeEventListener('resize', initStars);
-    if (window.visualViewport) window.visualViewport.removeEventListener('resize', onResize);
+    window.removeEventListener('resize', resizeBG);
+    if (window.visualViewport) window.visualViewport.removeEventListener('resize', resizeBG);
     document.removeEventListener('visibilitychange', onVisibility);
   };
 }
