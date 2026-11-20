@@ -2,7 +2,7 @@
   --bg1: #02050a;
   --bg2: #060b13;
   --accent: #00f0ff;
-  --muted: rgba(225, 240, 255, 0.65);
+  --muted: rgba(225, 240, 255, 0.74);
   --btn-glow: 0 4px 15px rgba(0, 240, 255, 0.15);
   --btn-glow-strong: 0 8px 25px rgba(0, 240, 255, 0.35);
 }
@@ -16,9 +16,10 @@ html {
   /* 只在 html 上限制水平溢出；clip 不创建滚动容器，老浏览器回退到 hidden */
   overflow-x: hidden;
   overflow-x: clip;
+  background-color: var(--bg1);
 }
 
-html, body {
+body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   min-height: 100dvh; /* 现代浏览器：动态视口高度，贴合移动端可视区域 */
@@ -27,9 +28,10 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* background-color 与渐变分开写，防止 Safari 橡皮筋回弹露白 */
-  background-color: #02050a;
+  background-color: var(--bg1);
   background-image: radial-gradient(1200px 800px at 10% 10%, rgba(6, 14, 20, 0.8), transparent),
                     linear-gradient(120deg, var(--bg1), var(--bg2));
+  background-attachment: fixed;
   color: #e8f6ff;
   overscroll-behavior-y: contain; /* 防橡皮筋越界露白，保留页面内部滚动 */
 }
@@ -38,6 +40,9 @@ html, body {
 #bgCanvas {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   z-index: 0;
   touch-action: pan-y;
   pointer-events: none;
@@ -96,23 +101,27 @@ html, body {
 
 /* cards */
 .card {
-  background: rgba(4, 10, 18, 0.15);
+  background: rgba(4, 10, 18, 0.24);
   padding: 16px;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.05);
   border: 1px solid rgba(0, 240, 255, 0.25);
   width: 100%;
   max-width: 980px;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 /* clock card */
 #clockCard {
-  background: transparent;
-  background-color: rgba(4, 10, 18, 0.08); /* 半透明，背景天体透过可见 */
+  background: rgba(4, 10, 18, 0.10); /* 高透明，背景天体透过可见 */
   border-color: rgba(0, 240, 255, 0.35);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), inset 0 0 35px rgba(0, 240, 255, 0.08);
+}
+
+/* tools card: 适度暗色磨砂底板，确保太阳/星光经过背后时按钮与文字仍清晰可读 */
+#toolsCard {
+  background: rgba(4, 10, 18, 0.56);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .clockSVG {
@@ -133,11 +142,12 @@ html, body {
 
 .dateText.neon {
   font-size: 18px;
-  background: linear-gradient(90deg, #00f0ff, #7000ff, #00f0ff);
+  background: linear-gradient(90deg, #00f0ff, #9d6bff, #00f0ff);
   background-size: 200% auto;
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
   animation: shine 4s linear infinite;
 }
 
@@ -164,32 +174,41 @@ html, body {
 }
 
 .toolButtons button {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  min-width: 76px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(10, 26, 44, 0.76), rgba(5, 15, 28, 0.58));
   color: #eaf9ff;
-  border: 1px solid rgba(0, 240, 255, 0.15);
+  border: 1px solid rgba(0, 240, 255, 0.24);
   padding: 9px 15px;
   border-radius: 12px;
   cursor: pointer;
   box-shadow: var(--btn-glow);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
   font-weight: 700;
   font-size: 14px;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-  will-change: transform, box-shadow;
 }
 
 .toolButtons button:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-2px);
   box-shadow: var(--btn-glow-strong);
   border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.26), rgba(8, 28, 48, 0.72));
 }
 
 /* active tool button state */
 .toolButtons button.active {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.22), rgba(0, 240, 255, 0.06));
+  background: linear-gradient(135deg, rgba(0, 200, 225, 0.36), rgba(0, 105, 145, 0.32));
   border-color: var(--accent);
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
   color: #ffffff;
+}
+
+.toolButtons button:focus-visible,
+.toolArea button:focus-visible,
+.pw-out:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* tool area */
@@ -205,16 +224,22 @@ html, body {
   width: 100%;
 }
 
+.tool-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
 .toolArea .hint {
   color: var(--muted);
   font-size: 14px;
 }
 
-.toolArea button,
-.toolArea input[type="button"],
-.toolArea .btn {
-  background: linear-gradient(90deg, rgba(102, 217, 255, 0.14), rgba(170, 230, 255, 0.07));
-  border: 1px solid rgba(160, 230, 255, 0.2);
+.toolArea button {
+  background: linear-gradient(135deg, rgba(16, 46, 68, 0.78), rgba(10, 28, 46, 0.68));
+  border: 1px solid rgba(120, 220, 255, 0.28);
   color: #eaf9ff;
   padding: 8px 16px;
   border-radius: 10px;
@@ -222,19 +247,25 @@ html, body {
   cursor: pointer;
   font-weight: 700;
   font-size: 14px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.toolArea button:hover,
-.toolArea .btn:hover {
+.toolArea button:hover:not(:disabled) {
   transform: translateY(-2px);
   border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(0, 175, 210, 0.3), rgba(12, 38, 60, 0.78));
   box-shadow: 0 6px 20px rgba(0, 240, 255, 0.25);
 }
 
-.toolArea button:active,
-.toolArea .btn:active {
+.toolArea button:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.toolArea button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .toolArea input,
@@ -242,8 +273,8 @@ html, body {
 .toolArea textarea {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(0, 240, 255, 0.24);
+  background: rgba(0, 0, 0, 0.42);
   color: #eef;
   font-size: 14px;
   outline: none;
@@ -257,13 +288,6 @@ html, body {
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
 }
 
-.toolArea .row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Calculator */
 .calc-widget {
   width: min(360px, 96%);
@@ -272,8 +296,8 @@ html, body {
   gap: 10px;
   padding: 14px;
   border-radius: 12px;
-  background: rgba(5, 13, 22, 0.55);
-  border: 1px solid rgba(160, 230, 255, 0.15);
+  background: rgba(5, 13, 22, 0.65);
+  border: 1px solid rgba(160, 230, 255, 0.18);
 }
 
 .calc-screen-wrap {
@@ -286,10 +310,11 @@ html, body {
   text-align: right;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.44);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #eaf9ff;
   font-family: monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .calc-out {
@@ -307,30 +332,14 @@ html, body {
   width: 100%;
 }
 
-.calc-key {
+.toolArea .calc-key {
   width: 100%;
   min-height: 44px;
   font-size: 18px;
   border-radius: 10px;
   appearance: none;
-}
-
-.calc-key-op {
-  color: #9ee6ff;
-}
-
-.calc-key-fn {
-  color: #ffdca7;
-}
-
-.calc-key-eq {
-  background: linear-gradient(90deg, rgba(102, 217, 255, 0.35), rgba(170, 230, 255, 0.12)) !important;
-  color: #ffffff !important;
-}
-
-.toolArea .calc-key {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow: var(--btn-glow);
   padding: 8px 4px;
 }
@@ -338,8 +347,27 @@ html, body {
 .toolArea .calc-key:hover {
   transform: none; /* 保持九宫格稳定，不向上跳动 */
   box-shadow: var(--btn-glow-strong);
-  border-color: rgba(0, 240, 255, 0.4);
-  background: linear-gradient(135deg, rgba(102, 217, 255, 0.1), rgba(255, 255, 255, 0.03));
+  border-color: rgba(0, 240, 255, 0.45);
+  background: linear-gradient(135deg, rgba(102, 217, 255, 0.16), rgba(255, 255, 255, 0.04));
+}
+
+.toolArea .calc-key-op {
+  color: #8ee5ff;
+}
+
+.toolArea .calc-key-fn {
+  color: #ffdca7;
+}
+
+.toolArea .calc-key-eq {
+  background: linear-gradient(135deg, rgba(0, 200, 230, 0.42), rgba(0, 120, 165, 0.3));
+  border-color: rgba(0, 240, 255, 0.45);
+  color: #ffffff;
+}
+
+.toolArea .calc-key-eq:hover {
+  background: linear-gradient(135deg, rgba(0, 220, 255, 0.55), rgba(0, 145, 195, 0.4));
+  border-color: var(--accent);
 }
 
 /* Daily Quote */
@@ -365,8 +393,8 @@ html, body {
   line-height: 1.7;
   padding: 12px 16px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   color: #eaf9ff;
 }
 
@@ -378,9 +406,9 @@ html, body {
 .quote-debug {
   width: 100%;
   text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.38);
   padding: 8px 10px;
 }
 
@@ -402,7 +430,7 @@ html, body {
   color: #d8f3ff;
 }
 
-/* 按钮尺寸收敛：解决按钮过宽问题 */
+/* 按钮尺寸收敛：避免单按钮被拉伸过宽 */
 .quote-widget .quote-refresh {
   align-self: center;
   min-width: 120px;
@@ -435,7 +463,7 @@ html, body {
 }
 
 .pw-len-input {
-  width: 64px !important;
+  width: 64px;
   text-align: center;
   font-weight: 700;
 }
@@ -447,8 +475,8 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 8px 14px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px dashed rgba(0, 240, 255, 0.25);
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px dashed rgba(0, 240, 255, 0.30);
   border-radius: 10px;
   font-family: monospace;
   font-size: 15px;
@@ -462,7 +490,7 @@ html, body {
 
 .pw-out:hover {
   border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.52);
 }
 
 /* Pomodoro & Stopwatch Widgets */
@@ -479,6 +507,7 @@ html, body {
   font-size: 36px;
   font-weight: 700;
   font-family: monospace;
+  font-variant-numeric: tabular-nums;
   color: var(--accent);
   letter-spacing: 2px;
   text-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
@@ -493,14 +522,19 @@ html, body {
   flex-wrap: wrap;
 }
 
+.pom-btns button,
+.sw-btns button {
+  min-width: 76px;
+}
+
 .sw-laps {
   width: min(280px, 90vw);
   margin-top: 6px;
   max-height: 120px;
   overflow-y: auto;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 4px 8px;
 }
 
@@ -509,9 +543,10 @@ html, body {
   justify-content: space-between;
   padding: 4px 6px;
   font-family: monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
   color: #cfeeff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sw-lap-item:last-child {
@@ -530,15 +565,15 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 14px;
-  background: rgba(0, 0, 0, 0.25);
+  padding: 9px 14px;
+  background: rgba(0, 0, 0, 0.35);
   border-radius: 8px;
-  border: 1px solid rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.16);
   transition: border-color 0.15s ease;
 }
 
 .wc-row:hover {
-  border-color: rgba(0, 240, 255, 0.3);
+  border-color: rgba(0, 240, 255, 0.38);
 }
 
 .wc-label {
@@ -549,6 +584,7 @@ html, body {
 
 .wc-time {
   font-family: monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
   color: #eaf9ff;
 }
@@ -570,15 +606,15 @@ html, body {
   color: #eaf9ff;
 }
 
-.cal-btn {
-  padding: 4px 12px !important;
+.toolArea .cal-btn {
+  padding: 4px 12px;
   min-width: 36px;
 }
 
 .cal-table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 6px;
+  border-collapse: separate;
+  border-spacing: 3px;
 }
 
 .cal-table th {
@@ -592,17 +628,21 @@ html, body {
   padding: 7px 4px;
   text-align: center;
   font-size: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: #d8f3ff;
 }
 
+.cal-table td:empty {
+  border-color: transparent;
+}
+
 .cal-table td.cal-today {
-  background: rgba(0, 240, 255, 0.18);
+  background: rgba(0, 240, 255, 0.22);
   border-color: var(--accent);
   color: #ffffff;
   font-weight: 700;
-  border-radius: 4px;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
 }
 
 /* Responsive adjustments */
