@@ -10,33 +10,10 @@
 
   <!-- 金色半月透明背景 + 双层光晕 favicon -->
   <link rel="icon"
-        href="data:image/svg+xml;utf8,
-        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-          <defs>
-            <radialGradient id='goldGrad' cx='50%' cy='50%' r='50%'>
-              <stop offset='0%' stop-color='%23fff8dc'/>
-              <stop offset='50%' stop-color='%23ffd700'/>
-              <stop offset='100%' stop-color='%23b8860b'/>
-            </radialGradient>
-            <filter id='doubleGlow' x='-50%' y='-50%' width='200%' height='200%'>
-              <feGaussianBlur in='SourceGraphic' stdDeviation='6' result='outerBlur'/>
-              <feMerge>
-                <feMergeNode in='outerBlur'/>
-                <feGaussianBlur in='SourceGraphic' stdDeviation='2' result='innerBlur'/>
-                <feMergeNode in='innerBlur'/>
-                <feMergeNode in='SourceGraphic'/>
-              </feMerge>
-            </filter>
-          </defs>
-          <path d='M50 5 A45 45 0 1 0 50 95 A25 45 0 1 1 50 5'
-                fill='url(%23goldGrad)'
-                filter='url(%23doubleGlow)'/>
-        </svg>">
+        href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='goldGrad' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='%23fff8dc'/><stop offset='50%' stop-color='%23ffd700'/><stop offset='100%' stop-color='%23b8860b'/></radialGradient><filter id='doubleGlow' x='-50%' y='-50%' width='200%' height='200%'><feGaussianBlur in='SourceGraphic' stdDeviation='6' result='outerBlur'/><feGaussianBlur in='SourceGraphic' stdDeviation='2' result='innerBlur'/><feMerge><feMergeNode in='outerBlur'/><feMergeNode in='innerBlur'/><feMergeNode in='SourceGraphic'/></feMerge></filter></defs><path d='M50 5 A45 45 0 1 0 50 95 A25 45 0 1 1 50 5' fill='url(%23goldGrad)' filter='url(%23doubleGlow)'/></svg>">
 
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <meta name="theme-color" content="#02050a">
 </head>
 <body>
@@ -60,26 +37,19 @@
               <stop offset="68%" stop-color="#071827" stop-opacity="0.03"/>
               <stop offset="100%" stop-color="#040a12" stop-opacity="0.0"/>
             </radialGradient>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
           </defs>
 
           <g id="clockGroup" transform="translate(150,150)">
             <circle r="140" fill="url(#clockGrad)" stroke="#66d9ff" stroke-opacity="0.55" stroke-width="3"></circle>
+            <g id="pendulumGroup" transform="translate(0,34)">
+              <line id="pendulumRod" x1="0" y1="0" x2="0" y2="86" stroke="#aab" stroke-width="2" stroke-linecap="round"/>
+              <circle id="pendulumBob" cx="0" cy="86" r="8.5" fill="#ffd166" stroke="#c88" stroke-width="1.5"/>
+            </g>
             <g id="marks"></g>
             <g id="hands">
               <line id="hourHand" x1="0" y1="0" x2="0" y2="-60" stroke-linecap="round" stroke-width="8" stroke="#a3f6ff"/>
               <line id="minuteHand" x1="0" y1="0" x2="0" y2="-90" stroke-linecap="round" stroke-width="5" stroke="#e6fbff"/>
               <line id="secondHand" x1="0" y1="0" x2="0" y2="-110" stroke-linecap="round" stroke-width="2" stroke="#ff6b6b"/>
-            </g>
-            <g id="pendulumGroup" transform="translate(0,40)">
-              <line id="pendulumRod" x1="0" y1="0" x2="0" y2="80" stroke="#aab" stroke-width="2" stroke-linecap="round"/>
-              <circle id="pendulumBob" cx="0" cy="95" r="10" fill="#ffd166" stroke="#c88" stroke-width="1.5"/>
             </g>
             <circle r="6" fill="#00121a" stroke="#66d9ff" stroke-width="1.2"></circle>
           </g>
@@ -90,13 +60,13 @@
       <div id="toolsCard" class="card">
         <h3 class="toolsTitle">无聊小工具</h3>
         <div id="toolButtons" class="toolButtons" role="toolbar" aria-label="工具按钮组">
-          <button data-tool="calculator" class="neon-btn">计算器</button>
-          <button data-tool="stopwatch" class="neon-btn">秒表</button>
-          <button data-tool="pomodoro" class="neon-btn">番茄钟</button>
-          <button data-tool="worldClocks" class="neon-btn">世界时钟</button>
-          <button data-tool="calendar" class="neon-btn">日历</button>
-          <button data-tool="passwordGen" class="neon-btn">随机密码</button>
-          <button data-tool="dailyQuote" class="neon-btn">每日名言</button>
+          <button type="button" data-tool="calculator" aria-pressed="false">计算器</button>
+          <button type="button" data-tool="stopwatch" aria-pressed="false">秒表</button>
+          <button type="button" data-tool="pomodoro" aria-pressed="false">番茄钟</button>
+          <button type="button" data-tool="worldClocks" aria-pressed="false">世界时钟</button>
+          <button type="button" data-tool="calendar" aria-pressed="false">日历</button>
+          <button type="button" data-tool="passwordGen" aria-pressed="false">随机密码</button>
+          <button type="button" data-tool="dailyQuote" aria-pressed="false">每日名言</button>
         </div>
         <div id="toolArea" class="toolArea">
           <div class="hint">点击上方按钮加载对应小工具</div>
