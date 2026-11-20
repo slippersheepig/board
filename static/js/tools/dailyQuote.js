@@ -9,7 +9,7 @@ export async function init() {
       <summary>查看异常详情</summary>
       <pre id="quoteDebugContent"></pre>
     </details>
-    <button id="quoteRefresh" class="quote-refresh">手动刷新</button>
+    <button type="button" id="quoteRefresh" class="quote-refresh">手动刷新</button>
   `;
 
   const textEl = el.querySelector('#quoteText');
@@ -79,6 +79,7 @@ export async function init() {
   }
 
   refreshBtn.addEventListener('click', loadQuote);
-  await loadQuote();
+  // 不阻塞模块返回，让卡片先挂载并展示“加载中…”状态
+  loadQuote();
   return el;
 }
